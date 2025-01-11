@@ -1,5 +1,6 @@
 import 'package:em_repairs/components/FilterSection.dart';
 import 'package:em_repairs/pages/ServiceDetails_page.dart';
+import 'package:em_repairs/pages/help_page.dart';
 import 'package:flutter/material.dart';
 import 'package:em_repairs/components/custom_app_bar.dart';
 import 'package:em_repairs/pages/Add_Orders.dart';
@@ -23,6 +24,9 @@ class _OrderPageState extends State<OrderPage> {
           IconButton(
             icon: Icon(Icons.help_outline, color: Colors.white),
             onPressed: () {
+              Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => HelpPage()));
+        
               // Handle help action
             },
           ),
@@ -49,9 +53,10 @@ class _OrderPageState extends State<OrderPage> {
                 child: Row(
                   children: [
                     Icon(Icons.search),
-                    const SizedBox(width: 5,),
+                    const SizedBox(
+                      width: 5,
+                    ),
                     Text('Filters'),
-                   
                   ],
                 ),
               ),

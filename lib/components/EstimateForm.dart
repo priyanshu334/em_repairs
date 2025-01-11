@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class EstimateForm extends StatefulWidget {
-  const EstimateForm({Key? key}) : super(key: key);
+  final Function({
+    required String repairCost,
+    required String advancePaid,
+    required DateTime? pickupDate,
+    required TimeOfDay? pickupTime,
+  }) onFormChange;
+
+  const EstimateForm({Key? key, required this.onFormChange}) : super(key: key);
 
   @override
   State<EstimateForm> createState() => _EstimateFormState();
@@ -12,6 +19,30 @@ class _EstimateFormState extends State<EstimateForm> {
   final TextEditingController advancePaidController = TextEditingController();
   DateTime? pickupDate;
   TimeOfDay? pickupTime;
+
+  void _notifyParent() {
+    widget.onFormChange(
+      repairCost: repairCostController.text,
+      advancePaid: advancePaidController.text,
+      pickupDate: pickupDate,
+      pickupTime: pickupTime,
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Notify the parent component whenever the controllers change
+    repairCostController.addListener(_notifyParent);
+    advancePaidController.addListener(_notifyParent);
+  }
+
+  @override
+  void dispose() {
+    repairCostController.dispose();
+    advancePaidController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +101,7 @@ class _EstimateFormState extends State<EstimateForm> {
                         hintText: pickupDate == null
                             ? "dd/mm/yy"
                             : "${pickupDate!.day}/${pickupDate!.month}/${pickupDate!.year}",
-                        border:  OutlineInputBorder(
+                        border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
@@ -85,6 +116,7 @@ class _EstimateFormState extends State<EstimateForm> {
                           setState(() {
                             pickupDate = selectedDate;
                           });
+                          _notifyParent();
                         }
                       },
                     ),
@@ -102,6 +134,7 @@ class _EstimateFormState extends State<EstimateForm> {
                         setState(() {
                           pickupDate = selectedDate;
                         });
+                        _notifyParent();
                       }
                     },
                     icon: const Icon(Icons.calendar_today),
@@ -119,7 +152,7 @@ class _EstimateFormState extends State<EstimateForm> {
                         hintText: pickupTime == null
                             ? "hh:mm"
                             : "${pickupTime!.hour}:${pickupTime!.minute.toString().padLeft(2, '0')}",
-                        border:  OutlineInputBorder(
+                        border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
@@ -132,6 +165,7 @@ class _EstimateFormState extends State<EstimateForm> {
                           setState(() {
                             pickupTime = selectedTime;
                           });
+                          _notifyParent();
                         }
                       },
                     ),
@@ -147,6 +181,7 @@ class _EstimateFormState extends State<EstimateForm> {
                         setState(() {
                           pickupTime = selectedTime;
                         });
+                        _notifyParent();
                       }
                     },
                     icon: const Icon(Icons.access_time),

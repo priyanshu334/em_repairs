@@ -1,11 +1,13 @@
-import 'package:flutter/material.dart';
+import 'package:appwrite/appwrite.dart';
 import 'package:camera/camera.dart';
+import 'package:em_repairs/services/appwrite_service.dart';
+import 'package:flutter/material.dart'; // Import the Appwrite service
 
 class CameraScreen extends StatelessWidget {
   final String title;
   final CameraController controller;
   final Future<void> initializeControllerFuture;
-  final Function(BuildContext) onCapture;
+  final Function(String) onCapture;
 
   const CameraScreen({
     Key? key,
@@ -80,7 +82,9 @@ class CameraScreen extends StatelessWidget {
                     children: [
                       // Capture button
                       GestureDetector(
-                        onTap: () => onCapture(context),
+                        onTap: () async {
+                          await _captureImage(context);
+                        },
                         child: Container(
                           height: 80,
                           width: 80,
@@ -126,5 +130,32 @@ class CameraScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _captureImage(BuildContext context) async {
+    final appwriteService = AppwriteService();
+    const bucketId = 'YOUR_BUCKET_ID'; // Replace with your bucket ID
+
+    try {
+      // Ensure the camera is initialized
+      await initializeControllerFuture;
+
+      // Capture the image
+      final XFile image = await controller.takePicture();
+
+      // Upload the image to Appwrite bucket
+      await appwriteService.uploadFile(bucketId, image.path);
+
+      // Pass the captured image path to the parent widget
+      onCapture(image.path);
+
+      // Navigate back to the previous screen
+      Navigator.pop(context);
+    } catch (e) {
+      // Show an error message if something goes wrong
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error capturing or uploading image: $e')),
+      );
+    }
   }
 }

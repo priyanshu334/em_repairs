@@ -1,16 +1,31 @@
 import 'package:flutter/material.dart';
 
-class ReceiverDetails extends StatefulWidget {
-  const ReceiverDetails({Key? key}) : super(key: key);
+class ReceiverDetailsForm extends StatefulWidget {
+  final Function(String name, bool isOwner, bool isStaff) onDataChanged; // Callback function
+
+  const ReceiverDetailsForm({Key? key, required this.onDataChanged}) : super(key: key);
 
   @override
-  _ReceiverDetailsState createState() => _ReceiverDetailsState();
+  _ReceiverDetailsFormState createState() => _ReceiverDetailsFormState();
 }
 
-class _ReceiverDetailsState extends State<ReceiverDetails> {
+class _ReceiverDetailsFormState extends State<ReceiverDetailsForm> {
   final TextEditingController _nameController = TextEditingController();
   bool isOwner = false;
   bool isStaff = false;
+
+  void _clearFields() {
+    _nameController.clear();
+    setState(() {
+      isOwner = false;
+      isStaff = false;
+    });
+  }
+
+  void _sendDataToParent() {
+    // Send the form data to the parent using the callback
+    widget.onDataChanged(_nameController.text.trim(), isOwner, isStaff);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +75,13 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
                           isOwner = true;
                           isStaff = false;
                         });
+                        _sendDataToParent(); // Pass data to parent when designation changes
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isOwner ? Colors.blue : Colors.grey[300],
-                        foregroundColor: isOwner ? Colors.white : Colors.black,
+                        backgroundColor:
+                            isOwner ? Colors.blue : Colors.grey[300],
+                        foregroundColor:
+                            isOwner ? Colors.white : Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -79,10 +97,13 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
                           isStaff = true;
                           isOwner = false;
                         });
+                        _sendDataToParent(); // Pass data to parent when designation changes
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isStaff ? Colors.blue : Colors.grey[300],
-                        foregroundColor: isStaff ? Colors.white : Colors.black,
+                        backgroundColor:
+                            isStaff ? Colors.blue : Colors.grey[300],
+                        foregroundColor:
+                            isStaff ? Colors.white : Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

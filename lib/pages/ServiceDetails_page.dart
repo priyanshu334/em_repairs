@@ -1,6 +1,7 @@
 import 'package:em_repairs/components/custom_app_bar.dart';
 import 'package:em_repairs/pages/List_page.dart';
 import 'package:em_repairs/pages/ServiceCenter_Page.dart';
+import 'package:em_repairs/pages/help_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -32,6 +33,9 @@ class ServiceDetailsPage extends StatelessWidget {
             icon: Icon(Icons.help_outline, color: Colors.white),
             onPressed: () {
               // Handle help action
+                 Navigator.push(
+                  context, MaterialPageRoute(builder: (context) => HelpPage()));
+            
             },
           ),
         ],
@@ -49,14 +53,14 @@ class ServiceDetailsPage extends StatelessWidget {
                 child: const Icon(
                   Icons.settings,
                   size: 120,
-                  color: Colors.blueAccent,
+                  color: Colors.red,
                 ),
               ),
               const SizedBox(height: 24),
               
               // Animated Text
               AnimatedText(
-                text: "Welcome to Service Details",
+                text: "Welcome to Repair Partner  Details",
                 textStyle: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -109,7 +113,7 @@ class ServiceDetailsPage extends StatelessWidget {
               // Animated Buttons with icons
               _buildAnimatedButton(
                 context: context,
-                label: "Go to List Page",
+                label: "Add a service operator",
                 color: Colors.blue,
                 onPressed: () => _navigateToListPage(context),
                 icon: Icons.list,

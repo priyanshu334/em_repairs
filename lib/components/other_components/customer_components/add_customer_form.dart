@@ -1,8 +1,4 @@
-import 'package:em_repairs/provider/customer_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:em_repairs/models/customer_model.dart';
-
 
 class AddCustomerForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
@@ -95,7 +91,7 @@ class AddCustomerForm extends StatelessWidget {
         ),
         _buildActionButton(
           text: "Add",
-          onPressed: () => _addCustomer(context),
+          onPressed: onAdd,
           color: Colors.teal,
         ),
       ],
@@ -114,7 +110,7 @@ class AddCustomerForm extends StatelessWidget {
       decoration: InputDecoration(
         labelText: labelText,
         prefixIcon: Icon(icon, color: Colors.teal),
-        labelStyle: const TextStyle(color: Colors.teal),
+        labelStyle: TextStyle(color: Colors.teal),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(15),
           borderSide: const BorderSide(color: Colors.teal),
@@ -152,30 +148,5 @@ class AddCustomerForm extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  void _addCustomer(BuildContext context) {
-    if (formKey.currentState?.validate() ?? false) {
-      final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
-      final newCustomer = CustomerModel(
-        name: nameController.text.trim(),
-        phone: phoneController.text.trim(),
-        address: addressController.text.trim(),
-      );
-
-      customerProvider.addCustomer(newCustomer).then((_) {
-        nameController.clear();
-        phoneController.clear();
-        addressController.clear();
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Customer added successfully!')),
-        );
-      }).catchError((error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding customer: $error')),
-        );
-      });
-    }
   }
 }

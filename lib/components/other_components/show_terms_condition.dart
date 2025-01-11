@@ -7,7 +7,7 @@ void showModelDetailsDialog(BuildContext context) {
     builder: (context) {
       return Dialog(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12), // Rounded corners for a modern look
+          borderRadius: BorderRadius.circular(12), // More rounded for modern feel
         ),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -37,12 +37,12 @@ void showModelDetailsDialog(BuildContext context) {
                 children: [
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pop(context); // Close the dialog
+                      Navigator.pop(context);
                     },
                     icon: const Icon(Icons.cancel, color: Colors.white),
-                    label: const Text("Cancel",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+                    label: const Text("Cancel"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.teal.shade600,
+                      foregroundColor: Colors.grey.shade400,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -52,15 +52,15 @@ void showModelDetailsDialog(BuildContext context) {
                   ElevatedButton.icon(
                     onPressed: () {
                       // Handle the Done action
-                      Navigator.pop(context); // Close the dialog
+                      Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Model details saved!')),
                       );
                     },
                     icon: const Icon(Icons.check, color: Colors.white),
-                    label: const Text("Done",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+                    label: const Text("Done"),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.shade600,
+                      foregroundColor: Colors.green.shade600,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

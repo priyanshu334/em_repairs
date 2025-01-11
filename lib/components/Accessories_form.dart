@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
 
 class AccessoriesForm extends StatefulWidget {
-  final Function({
-    required bool powerAdapterChecked,
-    required bool keyboardChecked,
-    required bool mouseChecked,
-    required bool warrantyChecked,
-    required String accessories,
-    required String details,
-    required DateTime? warrantyDate,
-  }) onDataChanged; // Define a callback to pass data to the parent
+  final Function(String accessoryName, String additionalDetails,
+      bool isWarranty, DateTime? warrantyDate)? onSubmit;
 
-  const AccessoriesForm({Key? key, required this.onDataChanged}) : super(key: key);
+  const AccessoriesForm({Key? key, this.onSubmit}) : super(key: key);
 
   @override
   _AccessoriesFormState createState() => _AccessoriesFormState();
@@ -40,18 +33,6 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
     }
   }
 
-  void _sendDataToParent() {
-    widget.onDataChanged(
-      powerAdapterChecked: isPowerAdapterChecked,
-      keyboardChecked: isKeyboardChecked,
-      mouseChecked: isMouseChecked,
-      warrantyChecked: isWarrantyChecked,
-      accessories: accessoryController.text,
-      details: detailsController.text,
-      warrantyDate: selectedDate,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -59,6 +40,7 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Title
           Text(
             "Accessories List",
             style: TextStyle(
@@ -68,50 +50,73 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
             ),
           ),
           SizedBox(height: 16),
+
+          // Checkbox for Power Adapter
           _buildCheckBoxRow(
             title: "Power Adapter",
             value: isPowerAdapterChecked,
-            onChanged: (value) => setState(() {
-              isPowerAdapterChecked = value!;
-            }),
+            onChanged: (value) {
+              setState(() {
+                isPowerAdapterChecked = value!;
+              });
+            },
             icon: Icons.power,
           ),
+
+          // Checkbox for Keyboard
           _buildCheckBoxRow(
             title: "Keyboard",
             value: isKeyboardChecked,
-            onChanged: (value) => setState(() {
-              isKeyboardChecked = value!;
-            }),
+            onChanged: (value) {
+              setState(() {
+                isKeyboardChecked = value!;
+              });
+            },
             icon: Icons.keyboard,
           ),
+
+          // Checkbox for Mouse
           _buildCheckBoxRow(
             title: "Mouse",
             value: isMouseChecked,
-            onChanged: (value) => setState(() {
-              isMouseChecked = value!;
-            }),
+            onChanged: (value) {
+              setState(() {
+                isMouseChecked = value!;
+              });
+            },
             icon: Icons.mouse,
           ),
+
           SizedBox(height: 16),
+
+          // Text Field for Other Accessories
           _buildTextField(
             controller: accessoryController,
-            label: "Other Accessories (comma-separated)",
+            label: "Other Accessories",
             icon: Icons.add_circle_outline,
           ),
+
           SizedBox(height: 16),
+
+          // Text Field for Additional Details
           _buildTextField(
             controller: detailsController,
             label: "Additional Details",
             icon: Icons.info_outline,
           ),
+
           SizedBox(height: 16),
+
+          // Warranty Checkbox and Date Picker
           Row(
             children: [
               Checkbox(
                 value: isWarrantyChecked,
-                onChanged: (value) => setState(() {
-                  isWarrantyChecked = value!;
-                }),
+                onChanged: (value) {
+                  setState(() {
+                    isWarrantyChecked = value!;
+                  });
+                },
               ),
               Text(
                 "Device on warranty",
@@ -139,16 +144,51 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
               ),
             ],
           ),
+
           SizedBox(height: 10),
-          ElevatedButton(
-            onPressed: _sendDataToParent, // Send data to the parent when pressed
-            child: Text("Send Data to Parent"),
-          ),
+
+          // Submit Button
+     
+          
+              
+               ElevatedButton(
+                onPressed: () {
+                  if (widget.onSubmit != null) {
+                    widget.onSubmit!(
+                      accessoryController.text,
+                      detailsController.text,
+                      isWarrantyChecked,
+                      selectedDate,
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal.shade600,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30.0,vertical: 5),
+                  child: Text(
+                    "Submit",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+            
+          
         ],
       ),
     );
   }
 
+  // Function to build each checkbox row with an icon
   Widget _buildCheckBoxRow({
     required String title,
     required bool value,
@@ -169,6 +209,7 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
     );
   }
 
+  // Function to build a text field with an icon
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,

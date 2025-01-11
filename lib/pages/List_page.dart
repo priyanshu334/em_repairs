@@ -1,13 +1,8 @@
-import 'package:appwrite/appwrite.dart';
 import 'package:em_repairs/components/custom_app_bar.dart';
-import 'package:em_repairs/pages/help_page.dart';
-import 'package:em_repairs/models/service_provider_model.dart';
-import 'package:em_repairs/provider/service_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class ListPage extends StatefulWidget {
-  const ListPage({Key? key}) : super(key: key);
+  const ListPage({super.key});
 
   @override
   _ListPageState createState() => _ListPageState();
@@ -15,94 +10,86 @@ class ListPage extends StatefulWidget {
 
 class _ListPageState extends State<ListPage> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _contactNoController = TextEditingController();
+  final TextEditingController _serviceController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  bool _isEditing = false;
-  ServiceProviderModel? _editingServiceProvider;
 
-  @override
-  void initState() {
-    super.initState();
-    // Fetch data on initial load
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ServiceProviderProvider>(context, listen: false).fetchServiceProviders();
+  final List<Map<String, dynamic>> _entries = [];
+  int? _editingIndex;
+
+  void _addEntry() {
+    if (_nameController.text.isNotEmpty &&
+        _serviceController.text.isNotEmpty &&
+        _descriptionController.text.isNotEmpty) {
+      final newEntry = {
+        'name': _nameController.text,
+        'service': _serviceController.text,
+        'description': _descriptionController.text,
+        'isScored': false,
+      };
+
+      setState(() {
+        _entries.add(newEntry);
+      });
+      _clearFields();
+    }
+  }
+
+  void _updateEntry() {
+    if (_nameController.text.isNotEmpty &&
+        _serviceController.text.isNotEmpty &&
+        _descriptionController.text.isNotEmpty &&
+        _editingIndex != null) {
+      setState(() {
+        _entries[_editingIndex!] = {
+          'name': _nameController.text,
+          'service': _serviceController.text,
+          'description': _descriptionController.text,
+          'isScored': _entries[_editingIndex!]['isScored'],
+        };
+        _editingIndex = null;
+      });
+      _clearFields();
+    }
+  }
+
+  void _toggleScoredStatus(int index) {
+    setState(() {
+      _entries[index]['isScored'] = !_entries[index]['isScored'];
     });
   }
 
-  void _submitDetails(ServiceProviderProvider provider) {
-    final name = _nameController.text.trim();
-    final contactNo = _contactNoController.text.trim();
-    final description = _descriptionController.text.trim();
-
-    if (name.isNotEmpty && contactNo.isNotEmpty && description.isNotEmpty) {
-      final serviceProvider = ServiceProviderModel(
-        id: _isEditing ? _editingServiceProvider?.id : null, // Use the existing ID for editing
-        name: name,
-        contactNo: contactNo,
-        description: description,
-      );
-
-      if (_isEditing) {
-        provider.updateServiceProvider(serviceProvider);
-      } else {
-        provider.addServiceProvider(serviceProvider);
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_isEditing ? 'Service Provider Updated' : 'Service Provider Added: $name')),
-      );
-
-      _clearFields();
-      setState(() {
-        _isEditing = false;
-        _editingServiceProvider = null;
-      });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
-    }
+  void _deleteEntry(int index) {
+    setState(() {
+      _entries.removeAt(index);
+    });
   }
 
   void _clearFields() {
     _nameController.clear();
-    _contactNoController.clear();
+    _serviceController.clear();
     _descriptionController.clear();
   }
 
-  void _editServiceProvider(ServiceProviderModel serviceProvider) {
-    _nameController.text = serviceProvider.name;
-    _contactNoController.text = serviceProvider.contactNo;
-    _descriptionController.text = serviceProvider.description;
+  void _setEditingEntry(int index) {
     setState(() {
-      _isEditing = true;
-      _editingServiceProvider = serviceProvider;
+      _nameController.text = _entries[index]['name'];
+      _serviceController.text = _entries[index]['service'];
+      _descriptionController.text = _entries[index]['description'];
+      _editingIndex = index;
     });
-  }
-
-  void _deleteServiceProvider(ServiceProviderModel serviceProvider, ServiceProviderProvider provider) {
-    provider.removeServiceProvider(serviceProvider);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${serviceProvider.name} removed')),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<ServiceProviderProvider>(context);
-
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Service Providers",
-        leadingIcon: Icons.business_center,
+        title: "Service Operator",
+        leadingIcon: Icons.build,
         actions: [
           IconButton(
-            icon: Icon(Icons.help_outline, color: Colors.white),
+            icon: const Icon(Icons.help),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => HelpPage()),
-              );
+              // Add search functionality here
             },
           ),
         ],
@@ -118,7 +105,7 @@ class _ListPageState extends State<ListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Service Provider Details",
+                  "Service Entries",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -126,53 +113,42 @@ class _ListPageState extends State<ListPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                _buildTextField(
                   controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: "Provider Name",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.person),
-                  ),
+                  labelText: "Name",
+                  icon: Icons.person,
+                  
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: _contactNoController,
-                  decoration: InputDecoration(
-                    labelText: "Contact Number",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.phone),
-                  ),
+                _buildTextField(
+                  controller: _serviceController,
+                  labelText: "Service",
+                  icon: Icons.design_services,
                 ),
                 const SizedBox(height: 16),
-                TextField(
+                _buildTextField(
                   controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText: "Description",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    prefixIcon: const Icon(Icons.description),
-                  ),
+                  labelText: "Description",
+                  icon: Icons.description,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => _submitDetails(provider),
+                        onPressed: _editingIndex == null ? _addEntry : _updateEntry,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal.shade600,
+                          backgroundColor: Colors.teal.shade700,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: Text(
-                          _isEditing ? "Update" : "Submit",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          _editingIndex == null ? "Submit" : "Update",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -188,33 +164,58 @@ class _ListPageState extends State<ListPage> {
                         ),
                         child: const Text(
                           "Cancel",
-                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
                 Expanded(
                   child: ListView.builder(
-                    itemCount: provider.serviceProviders.length,
+                    itemCount: _entries.length,
                     itemBuilder: (context, index) {
-                      final serviceProvider = provider.serviceProviders[index];
+                      final entry = _entries[index];
                       return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Colors.black),
+                        ),
                         child: ListTile(
-                          title: Text(serviceProvider.name),
-                          subtitle: Text('${serviceProvider.contactNo} - ${serviceProvider.description}'),
+                          leading: CircleAvatar(
+                            backgroundColor: Colors.black,
+                            child: Text(
+                              entry['name'][0].toUpperCase(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          title: Text(
+                            entry['name'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            '${entry['service']} - ${entry['description']}',
+                          ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _editServiceProvider(serviceProvider),
+                                icon: Icon(
+                                  entry['isScored']
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank,
+                                  color: Colors.green,
+                                ),
+                                onPressed: () => _toggleScoredStatus(index),
                               ),
                               IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteServiceProvider(serviceProvider, provider),
+                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () => _setEditingEntry(index),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteEntry(index),
                               ),
                             ],
                           ),
@@ -229,5 +230,31 @@ class _ListPageState extends State<ListPage> {
         ),
       ),
     );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    required IconData icon,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        prefixIcon: Icon(icon, color: Colors.black),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _serviceController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
   }
 }

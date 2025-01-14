@@ -8,8 +8,8 @@ class ReceiverDetailsProvider extends ChangeNotifier {
   final List<ReceiverDetailsModel> _receivers = [];
   ReceiverDetailsModel? _selectedReceiver;
 
-  static const String databaseId = '678241a4000c5def62aa'; // Replace with your actual database ID
-  static const String collectionId = '6782c62d003283a3990f'; // Replace with your actual collection ID
+  static const String databaseId = '678690d10024689b7151'; // Replace with your actual database ID
+  static const String collectionId = '678695f500154d1733e8'; // Replace with your actual collection ID
 
   ReceiverDetailsProvider(this._appwriteService);
 

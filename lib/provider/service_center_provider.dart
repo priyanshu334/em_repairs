@@ -8,8 +8,8 @@ class ServiceCenterProvider extends ChangeNotifier {
   final List<ServiceCenterModel> _serviceCenters = [];
   ServiceCenterModel? _selectedServiceCenter;
 
-  static const String databaseId = '678241a4000c5def62aa'; // Replace with your actual database ID
-  static const String collectionId = '6782c71f002c4fbbddb1'; // Replace with your actual collection ID
+  static const String databaseId = '678690d10024689b7151'; // Replace with your actual database ID
+  static const String collectionId = '678696e6001ff8e8e118'; // Replace with your actual collection ID
 
   ServiceCenterProvider(this._appwriteService);
 
@@ -30,11 +30,8 @@ class ServiceCenterProvider extends ChangeNotifier {
 
       _serviceCenters.clear();
       for (var doc in response.documents) {
-        // Ensure 'id' is passed to the model by including documentId
-        _serviceCenters.add(ServiceCenterModel.fromMap(
-          doc.data, 
-          doc.$id, // Pass the document's ID
-        ));
+        // Pass only the data, no need for 'id' as it's nullable now
+        _serviceCenters.add(ServiceCenterModel.fromMap(doc.data));
       }
       notifyListeners();
     } catch (e) {
@@ -49,20 +46,12 @@ class ServiceCenterProvider extends ChangeNotifier {
       final response = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: serviceCenter.id, // Let Appwrite generate a unique ID
-        data: {
-          'id': serviceCenter.id,
-          'name': serviceCenter.name,
-          'contactNumber': serviceCenter.contactNumber,
-          'address': serviceCenter.address,
-        },
+        documentId: ID.unique(), // Let Appwrite generate a unique ID
+        data: serviceCenter.toMap(), // Send the data without 'id'
       );
 
-      // Add the newly created service center with ID
-      _serviceCenters.add(ServiceCenterModel.fromMap(
-        response.data,
-        response.$id, // Use the response's $id
-      ));
+      // Add the newly created service center with the generated ID
+      _serviceCenters.add(ServiceCenterModel.fromMap(response.data));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding service center: $e');
@@ -73,15 +62,17 @@ class ServiceCenterProvider extends ChangeNotifier {
   Future<void> updateServiceCenter(ServiceCenterModel serviceCenter) async {
     try {
       final databases = Databases(_appwriteService.client);
+
+      if (serviceCenter.id == null) {
+        debugPrint('Error: ServiceCenter ID is required for update.');
+        return;
+      }
+
       await databases.updateDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: serviceCenter.id, // Use the service center ID to update
-        data: {
-          'name': serviceCenter.name,
-          'contactNumber': serviceCenter.contactNumber,
-          'address': serviceCenter.address,
-        },
+        documentId: serviceCenter.id!, // Ensure 'id' is non-null
+        data: serviceCenter.toMap(),
       );
 
       // Update the service center locally in the list
@@ -100,10 +91,16 @@ class ServiceCenterProvider extends ChangeNotifier {
   Future<void> removeServiceCenter(ServiceCenterModel serviceCenter) async {
     try {
       final databases = Databases(_appwriteService.client);
+
+      if (serviceCenter.id == null) {
+        debugPrint('Error: ServiceCenter ID is required for deletion.');
+        return;
+      }
+
       await databases.deleteDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: serviceCenter.id, // Use the service center ID
+        documentId: serviceCenter.id!, // Ensure 'id' is non-null
       );
 
       _serviceCenters.remove(serviceCenter);
@@ -146,7 +143,7 @@ class ServiceCenterProvider extends ChangeNotifier {
           collectionId: collectionId,
           documentId: id,
         );
-        fetchedServiceCenters.add(ServiceCenterModel.fromMap(response.data, response.$id)); // Map document to ServiceCenterModel
+        fetchedServiceCenters.add(ServiceCenterModel.fromMap(response.data)); // Map document to ServiceCenterModel
       }
 
       return fetchedServiceCenters;

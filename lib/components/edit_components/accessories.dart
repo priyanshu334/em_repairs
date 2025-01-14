@@ -36,6 +36,7 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
     }
   }
 
+
   void _submitForm() {
     final String accessoryName = accessoryController.text;
     final String additionalDetails = detailsController.text;

@@ -8,8 +8,8 @@ class ModelDetailsProvider extends ChangeNotifier {
   final List<ModelDetailsModel> _models = [];
   ModelDetailsModel? _selectedModel;
 
-  static const String databaseId = '678241a4000c5def62aa'; // Replace with your database ID
-  static const String collectionId = '6782c5440010c9b9c763'; // Replace with your collection ID
+  static const String databaseId = '678690d10024689b7151'; // Replace with your database ID
+  static const String collectionId = '67869510001ae41098f1'; // Replace with your collection ID
 
   ModelDetailsProvider(this._appwriteService);
 
@@ -47,7 +47,7 @@ class ModelDetailsProvider extends ChangeNotifier {
       final response = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: model.id ?? 'unique_document_id', // Use a default or let Appwrite generate it
+        documentId: ID.unique(), // Use a default or let Appwrite generate it
         data: model.toMap(),
       );
 

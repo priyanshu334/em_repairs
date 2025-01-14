@@ -11,7 +11,7 @@ class DeviceKycModel {
   final AccessoriesModel? accessoriesModel; // Optional accessories
 
   DeviceKycModel({
-    this.deviceId, // Now optional
+    this.deviceId, // Nullable 'deviceId'
     this.modelDetailsModel,
     this.lockCodeModel,
     this.barcodeModel,
@@ -21,7 +21,7 @@ class DeviceKycModel {
   // Convert to Map (for example, for saving or sending data)
   Map<String, dynamic> toMap() {
     return {
-      'deviceId': deviceId, // Can be null now
+      'deviceId': deviceId, // Can be null
       'modelDetails': modelDetailsModel?.toMap(),
       'lockCode': lockCodeModel?.toMap(),
       'barcode': barcodeModel?.toMap(),
@@ -32,7 +32,7 @@ class DeviceKycModel {
   // Convert from Map (for example, when loading data)
   factory DeviceKycModel.fromMap(Map<String, dynamic> map) {
     return DeviceKycModel(
-      deviceId: map['deviceId'], // No need to use ?? '' anymore
+      deviceId: map['deviceId'], // Can be null
       modelDetailsModel: map['modelDetails'] != null
           ? ModelDetailsModel.fromMap(map['modelDetails'])
           : null,

@@ -9,8 +9,8 @@ class AccessoriesProvider with ChangeNotifier {
   late Databases _databases;
 
   // Database and Collection IDs
-  final String _databaseId = '678241a4000c5def62aa'; // Replace with your actual database ID
-  final String _collectionId = '6782c251002d2cdba1b5'; // Replace with your actual collection ID
+  final String _databaseId = '678690d10024689b7151'; // Replace with your actual database ID
+  final String _collectionId = '6786912d00153a010c61'; // Replace with your actual collection ID
 
   AccessoriesProvider(this._appwriteService) {
     _databases = Databases(_appwriteService.client);

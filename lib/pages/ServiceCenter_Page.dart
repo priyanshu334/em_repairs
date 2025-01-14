@@ -34,7 +34,7 @@ class _ServiceCenterPageState extends State<ServiceCenterPage> {
 
     if (name.isNotEmpty && number.isNotEmpty && address.isNotEmpty) {
       final serviceCenter = ServiceCenterModel(
-        id: _editingServiceCenter != null ? _editingServiceCenter!.id : 'unique()', // Use the existing ID if editing
+ // Use the existing ID if editing
         name: name,
         contactNumber: number,
         address: address,

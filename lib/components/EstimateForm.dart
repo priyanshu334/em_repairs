@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class EstimateForm extends StatefulWidget {
-  final Function(EstimateModel newEstimate) onEstimateAdded; // Updated callback to pass the entire EstimateModel
+  final Function(EstimateModel newEstimate) onEstimateAdded;
 
   const EstimateForm({Key? key, required this.onEstimateAdded}) : super(key: key);
 
@@ -16,7 +16,7 @@ class _EstimateFormState extends State<EstimateForm> {
   final TextEditingController repairCostController = TextEditingController();
   final TextEditingController advancePaidController = TextEditingController();
   DateTime? pickupDate;
-  TimeOfDay? pickupTime;
+  String? pickupTime; // Changed to String
 
   @override
   Widget build(BuildContext context) {
@@ -121,9 +121,7 @@ class _EstimateFormState extends State<EstimateForm> {
                       readOnly: true,
                       decoration: InputDecoration(
                         labelText: "Pickup Time",
-                        hintText: pickupTime == null
-                            ? "hh:mm"
-                            : "${pickupTime!.hour}:${pickupTime!.minute.toString().padLeft(2, '0')}",
+                        hintText: pickupTime ?? "hh:mm",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -135,7 +133,9 @@ class _EstimateFormState extends State<EstimateForm> {
                         );
                         if (selectedTime != null) {
                           setState(() {
-                            pickupTime = selectedTime;
+                            // Format TimeOfDay to String
+                            pickupTime =
+                                "${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}";
                           });
                         }
                       },
@@ -150,7 +150,9 @@ class _EstimateFormState extends State<EstimateForm> {
                       );
                       if (selectedTime != null) {
                         setState(() {
-                          pickupTime = selectedTime;
+                          // Format TimeOfDay to String
+                          pickupTime =
+                              "${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}";
                         });
                       }
                     },
@@ -170,7 +172,7 @@ class _EstimateFormState extends State<EstimateForm> {
                       repairCost: double.tryParse(repairCostController.text) ?? 0.0,
                       advancePaid: double.tryParse(advancePaidController.text) ?? 0.0,
                       pickupDate: pickupDate!,
-                      pickupTime: pickupTime!,
+                      pickupTime: pickupTime!, // Use String value for pickupTime
                     );
 
                     // Call addEstimate method from EstimateProvider to save the estimate

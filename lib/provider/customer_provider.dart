@@ -8,8 +8,8 @@ class CustomerProvider extends ChangeNotifier {
   final List<CustomerModel> _customers = [];
   CustomerModel? _selectedCustomer;
 
-  static const String databaseId = '678241a4000c5def62aa';
-  static const String collectionId = '6782c3aa001ca42514fe';
+  static const String databaseId = '678690d10024689b7151';
+  static const String collectionId = '678691f300189eff0ac8';
 
   CustomerProvider(this._appwriteService);
 
@@ -30,7 +30,7 @@ class CustomerProvider extends ChangeNotifier {
 
       _customers.clear();
       for (var doc in response.documents ?? []) {
-        _customers.add(CustomerModel.fromMap(doc.data, documentId: doc.$id)); // Pass document ID
+        _customers.add(CustomerModel.fromMap(doc.data)); // Removed documentId
       }
       notifyListeners();
       debugPrint('Fetched ${_customers.length} customers successfully.');
@@ -46,12 +46,12 @@ class CustomerProvider extends ChangeNotifier {
       final response = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: customer.id ?? '', // Appwrite will generate the ID if it's null
+        documentId: ID.unique(), // Let Appwrite generate the ID
         data: customer.toMap(),
       );
 
-      // Fetch the document and update the list with new ID
-      final addedCustomer = CustomerModel.fromMap(response.data, documentId: response.$id);
+      // Fetch the document and update the list
+      final addedCustomer = CustomerModel.fromMap(response.data); // Removed documentId
       _customers.add(addedCustomer);
       notifyListeners();
       debugPrint('Customer added: ${customer.name}');
@@ -67,7 +67,7 @@ class CustomerProvider extends ChangeNotifier {
       await databases.updateDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: customer.id!,
+        documentId: customer.id!, // You can keep this if required but ensure customer has an ID
         data: customer.toMap(),
       );
 
@@ -89,7 +89,7 @@ class CustomerProvider extends ChangeNotifier {
       await databases.deleteDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: customer.id!,
+        documentId: customer.id!, // Ensure customer has an ID before deletion
       );
 
       _customers.removeWhere((c) => c.id == customer.id);
@@ -130,10 +130,10 @@ class CustomerProvider extends ChangeNotifier {
         documentId: id,
       );
 
-      return CustomerModel.fromMap(response.data, documentId: response.$id);
+      return CustomerModel.fromMap(response.data); // Removed documentId
     } catch (e) {
       debugPrint('Error fetching customer by ID: ${e.toString()}');
-      return null; // Return null if the document does not exist or there's an error
+      return null;
     }
   }
 }

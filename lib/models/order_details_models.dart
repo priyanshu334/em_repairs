@@ -6,7 +6,7 @@ enum OrderStatus {
 }
 
 class OrderDetailsModel {
-  final String? id; // Make 'id' nullable
+  final String? id; // Nullable 'id'
   final String deviceModel;
   final OrderStatus orderStatus;
   final List<String> problems;
@@ -28,9 +28,9 @@ class OrderDetailsModel {
   }
 
   // Create a model from a map (useful for parsing Appwrite's response)
-  factory OrderDetailsModel.fromMap(Map<String, dynamic> map, String documentId) {
+  factory OrderDetailsModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
     return OrderDetailsModel(
-      id: documentId, // Use the document ID from Appwrite response
+      id: documentId, // Use documentId from the response (nullable)
       deviceModel: map['deviceModel'] ?? '',
       orderStatus: OrderStatus.values.firstWhere(
         (e) => e.name == map['orderStatus'],

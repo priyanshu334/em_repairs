@@ -1,15 +1,15 @@
+import 'package:em_repairs/models/Order_model.dart';
 import 'package:em_repairs/services/apwrite_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:appwrite/appwrite.dart';
-import 'package:em_repairs/models/order_model.dart'; // Import OrderModel
 
 class OrderProvider with ChangeNotifier {
   final AppwriteService _appwriteService;
   late Databases _databases;
 
   // Database and Collection IDs
-  final String _databaseId = '678241a4000c5def62aa'; // Replace with your actual database ID
-  final String _collectionId = '6784e7110008b9ece183'; // Replace with your actual collection ID
+  final String _databaseId = '678690d10024689b7151'; // Replace with your actual database ID
+  final String _collectionId = '6786a989001e0a3c5aa3'; // Replace with your actual collection ID
 
   OrderProvider(this._appwriteService) {
     _databases = Databases(_appwriteService.client);
@@ -28,10 +28,13 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // If ID is null, let Appwrite generate it
+      final documentId = model.id ?? ''; // Let Appwrite generate the ID
+
       final response = await _databases.createDocument(
         databaseId: _databaseId,
         collectionId: _collectionId,
-        documentId: model.id, // Appwrite will generate a unique ID
+        documentId: documentId, // Use provided or generated document ID
         data: model.toMap(),
       );
 
@@ -56,7 +59,7 @@ class OrderProvider with ChangeNotifier {
         collectionId: _collectionId,
         documentId: documentId,
       );
-      return OrderModel.fromMap(response.data); // Create model from map
+      return OrderModel.fromMap(response.data); // Use document ID from response
     } catch (e) {
       debugPrint('Error fetching order: $e');
       throw Exception('Failed to fetch order data.');
@@ -75,7 +78,7 @@ class OrderProvider with ChangeNotifier {
       );
 
       _orderList = result.documents.map((doc) {
-        return OrderModel.fromMap(doc.data); // Map document data to OrderModel
+        return OrderModel.fromMap(doc.data); // Pass document ID for mapping
       }).toList();
 
       notifyListeners();
@@ -94,18 +97,22 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      await _databases.updateDocument(
-        databaseId: _databaseId,
-        collectionId: _collectionId,
-        documentId: documentId,
-        data: model.toMap(),
-      );
+      if (model.id != null) {
+        await _databases.updateDocument(
+          databaseId: _databaseId,
+          collectionId: _collectionId,
+          documentId: documentId,
+          data: model.toMap(),
+        );
 
-      // Update the order in the local list
-      final index = _orderList.indexWhere((order) => order.id == documentId);
-      if (index != -1) {
-        _orderList[index] = model.copyWith(id: documentId); // Ensure ID consistency
-        notifyListeners();
+        // Update the order in the local list
+        final index = _orderList.indexWhere((order) => order.id == documentId);
+        if (index != -1) {
+          _orderList[index] = model.copyWith(id: documentId); // Ensure ID consistency
+          notifyListeners();
+        }
+      } else {
+        debugPrint('Error: Order ID is missing.');
       }
     } catch (e) {
       debugPrint('Error updating order: $e');
@@ -137,23 +144,6 @@ class OrderProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
-    }
-  }
-
-  // Fetch multiple orders by their IDs
-  // Fetch a single OrderModel by its id
-  Future<OrderModel> getOrderById(String id) async {
-    try {
-      final response = await _databases.getDocument(
-        databaseId: _databaseId,
-        collectionId: _collectionId,
-        documentId: id,
-      );
-
-      return OrderModel.fromMap(response.data); // Map document data to OrderModel
-    } catch (e) {
-      debugPrint('Error fetching order by ID: $e');
-      throw Exception('Failed to fetch order by ID.');
     }
   }
 }

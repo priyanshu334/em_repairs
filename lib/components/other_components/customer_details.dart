@@ -1,26 +1,18 @@
+import 'package:em_repairs/provider/customer_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
+import 'package:em_repairs/services/apwrite_service.dart';
 
-import 'package:em_repairs/provider/customer_provider.dart';
+import 'package:em_repairs/components/other_components/customer_componets/customer_display_card.dart';
+import 'package:em_repairs/components/other_components/customer_componets/customer_form.dart';
+import 'package:em_repairs/components/other_components/customer_componets/customer_list.dart';
 import 'package:em_repairs/models/customer_model.dart';
-import 'package:em_repairs/components/other_components/customer_components/cusomer_action_row.dart';
-import 'package:em_repairs/components/other_components/customer_components/customer_card.dart';
-import 'package:em_repairs/components/other_components/customer_components/customer_dilouge.dart';
 
 class CustomerDetails extends StatefulWidget {
-  final TextEditingController searchController;
-  final TextEditingController nameController;
-  final TextEditingController phoneController;
-  final TextEditingController addressController;
-  final Function(String) onCustomerSelected;
+  final Function(CustomerModel?) onCustomerSelected;
 
   const CustomerDetails({
     super.key,
-    required this.searchController,
-    required this.nameController,
-    required this.phoneController,
-    required this.addressController,
     required this.onCustomerSelected,
   });
 
@@ -29,53 +21,83 @@ class CustomerDetails extends StatefulWidget {
 }
 
 class _CustomerDetailsState extends State<CustomerDetails> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); // Key for the form
+  final TextEditingController searchController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController addressController = TextEditingController();
 
-  // Add a customer
-  void _addCustomer(BuildContext context) async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final customerProvider =
-          Provider.of<CustomerProvider>(context, listen: false);
+  List<CustomerModel> _customers = [];
+  CustomerModel? _selectedCustomer;
 
-      // Generate a new UUID for the customer ID
-      var uuid = Uuid();
-      final newCustomer = CustomerModel(
-        id: uuid.v4(),
-        name: widget.nameController.text,
-        phone: widget.phoneController.text,
-        address: widget.addressController.text,
-      );
-
-      try {
-        await customerProvider.addCustomer(newCustomer);
-
-        // Clear the form fields
-        widget.nameController.clear();
-        widget.phoneController.clear();
-        widget.addressController.clear();
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Customer added successfully!')),
-        );
-
-        // Close the dialog
-        Navigator.pop(context);
-      } catch (e) {
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add customer: $e')),
-        );
-      }
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomers();
   }
 
-  // Select a customer
-  void _selectCustomer(BuildContext context) {
-    final customerProvider =
-        Provider.of<CustomerProvider>(context, listen: false);
+  // Load customers from the provider
+  Future<void> _loadCustomers() async {
+    final provider = Provider.of<CustomerProvider>(context, listen: false);
+    await provider.fetchCustomers();
+    setState(() {
+      _customers = provider.customers;
+    });
+  }
 
-    showDialog<CustomerModel>(
+  // Show dialog to add a customer
+  void _showAddCustomerDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Enter Customer Details"),
+          content: CustomerForm(
+            nameController: nameController,
+            phoneController: phoneController,
+            addressController: addressController,
+            formKey: _formKey,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Close"),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  final provider = Provider.of<CustomerProvider>(context, listen: false);
+                  final customer = CustomerModel(
+                
+                    name: nameController.text,
+                    phone: phoneController.text,
+                    address: addressController.text,
+                  );
+
+                  provider.addCustomer(customer);
+                  nameController.clear();
+                  phoneController.clear();
+                  addressController.clear();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Customer Added')),
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Add"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Show dialog to select a customer
+  void _showSelectCustomerDialog() {
+    showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
@@ -83,35 +105,22 @@ class _CustomerDetailsState extends State<CustomerDetails> {
           content: SizedBox(
             width: MediaQuery.of(context).size.width * 0.8,
             height: MediaQuery.of(context).size.height * 0.5,
-            child: Consumer<CustomerProvider>(
-              builder: (context, provider, child) {
-                if (provider.customers.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return ListView.builder(
-                  itemCount: provider.customers.length,
-                  itemBuilder: (context, index) {
-                    final customer = provider.customers[index];
-                    return ListTile(
-                      title: Text(customer.name),
-                      subtitle: Text(
-                        "Phone: ${customer.phone}\nAddress: ${customer.address}",
-                      ),
-                      isThreeLine: true,
-                      onTap: () {
-                        customerProvider.selectCustomer(customer);
-                        widget.onCustomerSelected(customer.id);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                );
+            child: CustomerList(
+              customers: _customers,
+              onCustomerSelected: (customer) {
+                setState(() {
+                  _selectedCustomer = customer;
+                });
+                widget.onCustomerSelected(customer); // Send selected customer to parent
+                Navigator.pop(context, customer);
               },
             ),
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                Navigator.pop(context);
+              },
               child: const Text("Close"),
             ),
           ],
@@ -122,69 +131,111 @@ class _CustomerDetailsState extends State<CustomerDetails> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CustomerProvider>(
-      builder: (context, customerProvider, child) {
-        final selectedCustomer = customerProvider.selectedCustomer;
-
-        return Padding(
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Card(
-            elevation: 4,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Title
+              const Text(
+                "Customer Details",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Display Customer Selection Card
+              CustomerDisplayCard(
+                selectedCustomer: _selectedCustomer,
+                onClearSelection: () {
+                  setState(() {
+                    _selectedCustomer = null;
+                  });
+                  widget.onCustomerSelected(null); // Notify parent that selection was cleared
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // Customer Selection & Add Buttons
+              Row(
                 children: [
-                  const Text(
-                    "Customer Details",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blueAccent,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (selectedCustomer != null)
-                    CustomerCard(
-                      customer: {
-                        'name': selectedCustomer.name,
-                        'phone': selectedCustomer.phone,
-                        'address': selectedCustomer.address,
-                      },
-                      onRemove: () =>
-                          customerProvider.removeSelectedCustomer(),
-                    )
-                  else
-                    const Text(
-                      "No customer selected.",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey,
+                  Expanded(
+                    flex: 3,
+                    child: TextField(
+                      controller: searchController,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        hintText: "Search and select from the list",
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: Colors.pink.shade300,
+                          ),
+                        ),
                       ),
                     ),
-                  const SizedBox(height: 16),
-                  CustomerActionRow(
-                    searchController: widget.searchController,
-                    onSelect: () => _selectCustomer(context),
-                    onAdd: () => showDialog(
-                      context: context,
-                      builder: (_) => CustomerDialog(
-                        nameController: widget.nameController,
-                        phoneController: widget.phoneController,
-                        addressController: widget.addressController,
-                        formKey: _formKey,
-                        onAdd: () => _addCustomer(context),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 1,
+                    child: ElevatedButton(
+                      onPressed: _showSelectCustomerDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text(
+                        "Select",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    flex: 1,
+                    child: ElevatedButton(
+                      onPressed: _showAddCustomerDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: const Text(
+                        "Add",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

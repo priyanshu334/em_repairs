@@ -1,5 +1,5 @@
 class ReceiverDetailsModel {
-  final String? id; // 'id' is now optional
+  final String? id; // Nullable 'id'
   final String name;
   final bool isOwner;
   final bool isStaff;
@@ -22,14 +22,14 @@ class ReceiverDetailsModel {
   }
 
   // Create a model from a map (useful for parsing Appwrite's response)
-factory ReceiverDetailsModel.fromMap(Map<String, dynamic> map) {
-  return ReceiverDetailsModel(
-    name: map['name'] ?? '',
-    isOwner: map['isOwner'] ?? false,
-    isStaff: map['isStaff'] ?? false,
-  );
-}
-
+  factory ReceiverDetailsModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
+    return ReceiverDetailsModel(
+      id: documentId, // Use documentId from the response (nullable)
+      name: map['name'] ?? '',
+      isOwner: map['isOwner'] ?? false,
+      isStaff: map['isStaff'] ?? false,
+    );
+  }
 
   @override
   String toString() {

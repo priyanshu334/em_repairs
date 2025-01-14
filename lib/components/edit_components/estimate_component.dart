@@ -2,7 +2,6 @@ import 'package:em_repairs/models/estimate_form.dart';
 import 'package:em_repairs/provider/estimate_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
 class EstimateForm extends StatefulWidget {
   final String? estimateId; // ID of the estimate to be updated
@@ -20,13 +19,14 @@ class _EstimateFormState extends State<EstimateForm> {
   final TextEditingController repairCostController = TextEditingController();
   final TextEditingController advancePaidController = TextEditingController();
   DateTime? pickupDate;
-  TimeOfDay? pickupTime;
+  String? pickupTime; // Using String for pickupTime as per the model
 
-  final Uuid uuid = Uuid();
+  late EstimateProvider _estimateProvider;
 
   @override
   void initState() {
     super.initState();
+    _estimateProvider = Provider.of<EstimateProvider>(context, listen: false);
     if (widget.estimateId != null) {
       // Fetch the estimate data based on the provided ID
       fetchEstimate();
@@ -35,14 +35,17 @@ class _EstimateFormState extends State<EstimateForm> {
 
   // Fetch the estimate using the passed estimateId
   Future<void> fetchEstimate() async {
-    final EstimateModel estimate = await Provider.of<EstimateProvider>(context, listen: false).getEstimateById(widget.estimateId!);
-
-    setState(() {
-      repairCostController.text = estimate.repairCost.toString();
-      advancePaidController.text = estimate.advancePaid.toString();
-      pickupDate = estimate.pickupDate;
-      pickupTime = estimate.pickupTime;
-    });
+    try {
+      final EstimateModel estimate = await _estimateProvider.getEstimateById(widget.estimateId!);
+      setState(() {
+        repairCostController.text = estimate.repairCost.toString();
+        advancePaidController.text = estimate.advancePaid.toString();
+        pickupDate = estimate.pickupDate;
+        pickupTime = estimate.pickupTime;
+      });
+    } catch (e) {
+      debugPrint('Error fetching estimate: $e');
+    }
   }
 
   @override
@@ -148,9 +151,7 @@ class _EstimateFormState extends State<EstimateForm> {
                       readOnly: true,
                       decoration: InputDecoration(
                         labelText: "Pickup Time",
-                        hintText: pickupTime == null
-                            ? "hh:mm"
-                            : "${pickupTime!.hour}:${pickupTime!.minute.toString().padLeft(2, '0')}",
+                        hintText: pickupTime ?? "hh:mm",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -162,7 +163,7 @@ class _EstimateFormState extends State<EstimateForm> {
                         );
                         if (selectedTime != null) {
                           setState(() {
-                            pickupTime = selectedTime;
+                            pickupTime = '${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}';
                           });
                         }
                       },
@@ -177,7 +178,7 @@ class _EstimateFormState extends State<EstimateForm> {
                       );
                       if (selectedTime != null) {
                         setState(() {
-                          pickupTime = selectedTime;
+                          pickupTime = '${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}';
                         });
                       }
                     },
@@ -194,20 +195,20 @@ class _EstimateFormState extends State<EstimateForm> {
                       pickupTime != null) {
                     // Create or Update Estimate
                     EstimateModel updatedEstimate = EstimateModel(
-                      id: widget.estimateId ?? uuid.v4(), // Use the existing ID or generate a new one
+                      id: widget.estimateId, // Use the existing ID or leave null for creation
                       repairCost: double.tryParse(repairCostController.text) ?? 0.0,
                       advancePaid: double.tryParse(advancePaidController.text) ?? 0.0,
                       pickupDate: pickupDate!,
-                      pickupTime: pickupTime!,
+                      pickupTime: pickupTime!, // Set as a String
                     );
 
                     // Update or create the estimate using the provider
                     if (widget.estimateId != null) {
                       // Update the existing estimate
-                      await Provider.of<EstimateProvider>(context, listen: false).updateEstimate(updatedEstimate);
+                      await _estimateProvider.updateEstimate(updatedEstimate);
                     } else {
                       // Create a new estimate
-                      await Provider.of<EstimateProvider>(context, listen: false).addEstimate(updatedEstimate);
+                      await _estimateProvider.addEstimate(updatedEstimate);
                     }
 
                     // Optionally close the form or reset the fields

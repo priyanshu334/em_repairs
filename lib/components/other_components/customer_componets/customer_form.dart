@@ -1,39 +1,44 @@
 import 'package:flutter/material.dart';
 
-class CustomerDialog extends StatelessWidget {
+class CustomerForm extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController phoneController;
   final TextEditingController addressController;
   final GlobalKey<FormState> formKey;
-  final VoidCallback onAdd;
 
-  const CustomerDialog({
-    Key? key,
+  const CustomerForm({
+    super.key,
     required this.nameController,
     required this.phoneController,
     required this.addressController,
     required this.formKey,
-    required this.onAdd,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text("Enter Customer Details"),
-      content: Form(
-        key: formKey,
-        child: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
+    return Form(
+      key: formKey,
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width * 0.8,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0), // Add padding between fields
+              child: TextFormField(
                 controller: nameController,
                 decoration: const InputDecoration(labelText: "Customer Name"),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Name is required' : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Name is required';
+                  }
+                  return null;
+                },
               ),
-              TextFormField(
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: TextFormField(
                 controller: phoneController,
                 decoration: const InputDecoration(labelText: "Customer Phone No"),
                 keyboardType: TextInputType.phone,
@@ -41,32 +46,30 @@ class CustomerDialog extends StatelessWidget {
                   if (value == null || value.trim().isEmpty) {
                     return 'Phone number is required';
                   }
+                  // Validate the phone number format
                   if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
                     return 'Enter a valid 10-digit phone number';
                   }
                   return null;
                 },
               ),
-              TextFormField(
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: TextFormField(
                 controller: addressController,
                 decoration: const InputDecoration(labelText: "Customer Address"),
-                validator: (value) =>
-                    value == null || value.trim().isEmpty ? 'Address is required' : null,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Address is required';
+                  }
+                  return null;
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text("Close"),
-        ),
-        TextButton(
-          onPressed: onAdd,
-          child: const Text("Add"),
-        ),
-      ],
     );
   }
 }

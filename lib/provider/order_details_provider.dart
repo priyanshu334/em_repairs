@@ -8,8 +8,8 @@ class OrderDetailsProvider extends ChangeNotifier {
   final List<OrderDetailsModel> _orders = [];
   OrderDetailsModel? _selectedOrder;
 
-  static const String databaseId = '678241a4000c5def62aa'; // Replace with your database ID
-  static const String collectionId = '6782c5a700139f0c96f5'; // Replace with your collection ID
+  static const String databaseId = '678690d10024689b7151'; // Replace with your database ID
+  static const String collectionId = '6786957b00300869c63a'; // Replace with your collection ID
 
   OrderDetailsProvider(this._appwriteService);
 
@@ -30,7 +30,7 @@ class OrderDetailsProvider extends ChangeNotifier {
 
       _orders.clear();
       for (var doc in response.documents) {
-        _orders.add(OrderDetailsModel.fromMap(doc.data, doc.$id));
+        _orders.add(OrderDetailsModel.fromMap(doc.data));
       }
       notifyListeners();
     } catch (e) {
@@ -45,12 +45,12 @@ class OrderDetailsProvider extends ChangeNotifier {
       final response = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: 'unique()', // Let Appwrite generate a unique ID
+        documentId: ID.unique(), // Let Appwrite generate a unique ID
         data: order.toMap(),
       );
 
       // Create the order model using the generated ID
-      _orders.add(OrderDetailsModel.fromMap(response.data, response.$id));
+      _orders.add(OrderDetailsModel.fromMap(response.data));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding order: $e');
@@ -61,17 +61,21 @@ class OrderDetailsProvider extends ChangeNotifier {
   Future<void> updateOrder(OrderDetailsModel order) async {
     try {
       final databases = Databases(_appwriteService.client);
-      await databases.updateDocument(
-        databaseId: databaseId,
-        collectionId: collectionId,
-        documentId: order.id!, // 'id' is required now, assert it's non-null
-        data: order.toMap(),
-      );
+      if (order.id != null) {
+        await databases.updateDocument(
+          databaseId: databaseId,
+          collectionId: collectionId,
+          documentId: order.id!, // 'id' can be null, so ensure it's checked
+          data: order.toMap(),
+        );
 
-      final index = _orders.indexWhere((o) => o.id == order.id);
-      if (index != -1) {
-        _orders[index] = order;
-        notifyListeners();
+        final index = _orders.indexWhere((o) => o.id == order.id);
+        if (index != -1) {
+          _orders[index] = order;
+          notifyListeners();
+        }
+      } else {
+        debugPrint('Error: Order ID is missing.');
       }
     } catch (e) {
       debugPrint('Error updating order: $e');
@@ -82,14 +86,18 @@ class OrderDetailsProvider extends ChangeNotifier {
   Future<void> removeOrder(OrderDetailsModel order) async {
     try {
       final databases = Databases(_appwriteService.client);
-      await databases.deleteDocument(
-        databaseId: databaseId,
-        collectionId: collectionId,
-        documentId: order.id!, // 'id' is required now, assert it's non-null
-      );
+      if (order.id != null) {
+        await databases.deleteDocument(
+          databaseId: databaseId,
+          collectionId: collectionId,
+          documentId: order.id!, // 'id' can be null, so ensure it's checked
+        );
 
-      _orders.remove(order);
-      notifyListeners();
+        _orders.remove(order);
+        notifyListeners();
+      } else {
+        debugPrint('Error: Order ID is missing.');
+      }
     } catch (e) {
       debugPrint('Error removing order: $e');
     }
@@ -125,7 +133,7 @@ class OrderDetailsProvider extends ChangeNotifier {
       );
 
       return OrderDetailsModel.fromMap(
-        response.toMap(), response.$id, // Ensure ID is passed
+        response.toMap(), // Pass only the data part for the model creation
       );
     } catch (e) {
       debugPrint('Error fetching order detail by ID: $e');

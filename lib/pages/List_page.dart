@@ -36,15 +36,17 @@ class _ListPageState extends State<ListPage> {
 
     if (name.isNotEmpty && contactNo.isNotEmpty && description.isNotEmpty) {
       final serviceProvider = ServiceProviderModel(
-        id: _isEditing ? _editingServiceProvider!.id : 'unique()', // Use the existing ID for editing, or let Appwrite generate a new one
+
         name: name,
         contactNo: contactNo,
         description: description,
       );
 
       if (_isEditing) {
-        provider.updateServiceProvider(serviceProvider);
+        // Update the service provider
+        provider.updateServiceProvider(serviceProvider, serviceProvider.id!);
       } else {
+        // Add a new service provider
         provider.addServiceProvider(serviceProvider);
       }
 
@@ -81,7 +83,7 @@ class _ListPageState extends State<ListPage> {
   }
 
   void _deleteServiceProvider(ServiceProviderModel serviceProvider, ServiceProviderProvider provider) {
-    provider.removeServiceProvider(serviceProvider);
+    provider.removeServiceProvider(serviceProvider.id!); // Ensure id is passed
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${serviceProvider.name} removed')),
     );

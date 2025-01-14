@@ -1,11 +1,13 @@
+import 'package:flutter/material.dart';
+
 class ServiceCenterModel {
-  final String id;  // Required 'id'
+  final String? id;  // Make 'id' nullable
   final String name;
   final String contactNumber;
   final String address;
 
   ServiceCenterModel({
-    required this.id,  // 'id' is now required
+    this.id,  // Nullable 'id'
     required this.name,
     required this.contactNumber,
     required this.address,
@@ -14,7 +16,6 @@ class ServiceCenterModel {
   // Convert the model to a map (for Appwrite Database operations)
   Map<String, dynamic> toMap() {
     return {
-      'id': id, // Include 'id' in the map
       'name': name,
       'contactNumber': contactNumber,
       'address': address,
@@ -22,9 +23,9 @@ class ServiceCenterModel {
   }
 
   // Create a model from a map (useful for parsing Appwrite's response)
-  factory ServiceCenterModel.fromMap(Map<String, dynamic> map, String documentId) {
+  factory ServiceCenterModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
     return ServiceCenterModel(
-      id: documentId,  // Use the document ID from Appwrite response
+      id: documentId, // Use the document ID from Appwrite response (nullable)
       name: map['name'] ?? '',
       contactNumber: map['contactNumber'] ?? '',
       address: map['address'] ?? '',
@@ -36,7 +37,7 @@ class ServiceCenterModel {
     return 'ServiceCenterModel(id: $id, name: $name, contactNumber: $contactNumber, address: $address)';
   }
 
-  // CopyWith method for creating modified copies
+  // CopyWith method for easier updates
   ServiceCenterModel copyWith({
     String? id,
     String? name,

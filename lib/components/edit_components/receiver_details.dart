@@ -1,8 +1,8 @@
+import 'package:em_repairs/provider/receiver_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
+import 'package:provider/provider.dart';
 import 'package:em_repairs/models/receiver_model.dart';
-import 'package:em_repairs/services/apwrite_service.dart';
-import 'package:appwrite/appwrite.dart';
+
 
 class ReceiverDetails extends StatefulWidget {
   final String? receiverId; // ID of the receiver to update (null for new records)
@@ -17,7 +17,6 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
   final TextEditingController _nameController = TextEditingController();
   bool isOwner = false;
   bool isStaff = false;
-  final Uuid uuid = Uuid();
   bool isLoading = false;
 
   @override
@@ -29,19 +28,10 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
   }
 
   Future<void> _fetchReceiverDetails(String id) async {
+    setState(() => isLoading = true);
     try {
-      setState(() => isLoading = true);
-
-      final databases = Databases(AppwriteService().client); // Initialize Appwrite service
-      final response = await databases.getDocument(
-        databaseId: '678241a4000c5def62aa', // Replace with your actual database ID
-        collectionId: '6782c62d003283a3990f', // Replace with your actual collection ID
-        documentId: id,
-      );
-
-      final receiver = ReceiverDetailsModel.fromMap(response.data, response.$id);
-
-      // Update the form with existing data
+      final receiverProvider = Provider.of<ReceiverDetailsProvider>(context, listen: false);
+      final receiver = await receiverProvider.getReceiverById(id);
       _nameController.text = receiver.name;
       setState(() {
         isOwner = receiver.isOwner;
@@ -55,44 +45,22 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
   }
 
   Future<void> _saveReceiverDetails() async {
+    setState(() => isLoading = true);
     try {
-      setState(() => isLoading = true);
+      final receiverProvider = Provider.of<ReceiverDetailsProvider>(context, listen: false);
 
-      final databases = Databases(AppwriteService().client); // Initialize Appwrite service
+      final receiver = ReceiverDetailsModel(
+        id: widget.receiverId,  // Keep existing ID if available
+        name: _nameController.text,
+        isOwner: isOwner,
+        isStaff: isStaff,
+      );
 
       if (widget.receiverId != null) {
-        // Update existing record
-        await databases.updateDocument(
-          databaseId: '678241a4000c5def62aa', // Replace with your actual database ID
-          collectionId: '6782c62d003283a3990f', // Replace with your actual collection ID
-          documentId: widget.receiverId!,
-          data: {
-            'name': _nameController.text,
-            'isOwner': isOwner,
-            'isStaff': isStaff,
-          },
-        );
+        await receiverProvider.addReceiver(receiver); // Update receiver if ID is present
       } else {
-        // Create a new record
-        final newId = uuid.v4();
-        await databases.createDocument(
-          databaseId: '678241a4000c5def62aa', // Replace with your actual database ID
-          collectionId: '6782c62d003283a3990f', // Replace with your actual collection ID
-          documentId: newId,
-          data: {
-            'name': _nameController.text,
-            'isOwner': isOwner,
-            'isStaff': isStaff,
-          },
-        );
+        await receiverProvider.addReceiver(receiver); // Add new receiver
       }
-
-      // Clear the form after saving
-      _nameController.clear();
-      setState(() {
-        isOwner = false;
-        isStaff = false;
-      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(widget.receiverId != null ? "Receiver updated" : "Receiver added")),

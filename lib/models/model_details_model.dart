@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class ModelDetailsModel {
   final String? id; // Nullable ID
   String? frontImagePath; // File path for the front image
@@ -25,9 +27,9 @@ class ModelDetailsModel {
   }
 
   // Create a model from a map (useful for parsing database or API responses)
-  factory ModelDetailsModel.fromMap(Map<String, dynamic> map) {
+  factory ModelDetailsModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
     return ModelDetailsModel(
-      id: map['id'], // `id` can be null in the map
+      id: documentId, // Use documentId from the response (nullable)
       frontImagePath: map['frontImagePath'],
       backImagePath: map['backImagePath'],
       sideImage1Path: map['sideImage1Path'],

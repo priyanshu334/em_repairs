@@ -7,8 +7,8 @@ class LockCodeProvider with ChangeNotifier {
   final AppwriteService appwriteService;
   late final Databases databases;
 
-  final String databaseId = '678241a4000c5def62aa'; // Replace with your database ID
-  final String collectionId = '6782c4ed00209fac6beb'; // Replace with your collection ID
+  final String databaseId = '678690d10024689b7151'; // Replace with your database ID
+  final String collectionId = '6786944e0028ae7f8991'; // Replace with your collection ID
 
   LockCodeProvider(this.appwriteService) {
     databases = Databases(appwriteService.client);
@@ -46,7 +46,7 @@ class LockCodeProvider with ChangeNotifier {
       final createdDoc = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: lockCode.id ?? 'uniqueId', // Appwrite will auto-generate if null
+        documentId: ID.unique(), // Appwrite will auto-generate if null
         data: lockCode.toMap(),
       );
 

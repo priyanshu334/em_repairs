@@ -5,7 +5,7 @@ class EstimateModel {
   final double repairCost;
   final double advancePaid;
   final DateTime? pickupDate;
-  final TimeOfDay? pickupTime;
+  final String? pickupTime; // Change pickupTime to String
 
   EstimateModel({
     this.id, // Nullable 'id'
@@ -21,9 +21,7 @@ class EstimateModel {
       'repairCost': repairCost,
       'advancePaid': advancePaid,
       'pickupDate': pickupDate?.toIso8601String(),
-      'pickupTime': pickupTime != null
-          ? '${pickupTime!.hour.toString().padLeft(2, '0')}:${pickupTime!.minute.toString().padLeft(2, '0')}'
-          : null,
+      'pickupTime': pickupTime, // Directly use the string representation
     };
   }
 
@@ -36,12 +34,7 @@ class EstimateModel {
       pickupDate: map['pickupDate'] != null
           ? DateTime.parse(map['pickupDate'])
           : null,
-      pickupTime: map['pickupTime'] != null
-          ? TimeOfDay(
-              hour: int.parse(map['pickupTime'].split(':')[0]),
-              minute: int.parse(map['pickupTime'].split(':')[1]),
-            )
-          : null,
+      pickupTime: map['pickupTime'], // Directly use the string value
     );
   }
 
@@ -56,7 +49,7 @@ class EstimateModel {
     double? repairCost,
     double? advancePaid,
     DateTime? pickupDate,
-    TimeOfDay? pickupTime,
+    String? pickupTime, // Updated to String
   }) {
     return EstimateModel(
       id: id ?? this.id,

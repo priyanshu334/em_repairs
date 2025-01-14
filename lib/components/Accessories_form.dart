@@ -52,7 +52,7 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
       isPowerAdapterChecked: isPowerAdapterChecked,
       isKeyboardChecked: isKeyboardChecked,
       isMouseChecked: isMouseChecked,
-      otherAccessories: otherAccessories,  // Save other accessories
+      otherAccessories: List<String>.from(otherAccessories),  // Save other accessories
     );
 
     // Save the accessory using the AccessoriesProvider

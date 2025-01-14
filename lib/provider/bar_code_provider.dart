@@ -8,8 +8,8 @@ class BarcodeProvider with ChangeNotifier {
   late Databases databases;
 
   // Database and collection IDs
-  final String databaseId = '678241a4000c5def62aa'; // Replace with your actual database ID
-  final String collectionId = '6782c36b0023ccf50554'; // Replace with your actual collection ID
+  final String databaseId = '678690d10024689b7151'; // Replace with your actual database ID
+  final String collectionId = '678691ce0004d7cb4818'; // Replace with your actual collection ID
 
   BarcodeProvider(this.appwriteService) {
     databases = Databases(appwriteService.client);

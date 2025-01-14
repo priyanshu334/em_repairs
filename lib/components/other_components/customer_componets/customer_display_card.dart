@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:em_repairs/models/customer_model.dart';
 
-class CustomerCard extends StatelessWidget {
-  final Map<String, String> customer;
-  final VoidCallback onRemove;
+class CustomerDisplayCard extends StatelessWidget {
+  final CustomerModel? selectedCustomer;
+  final Function onClearSelection;
 
-  const CustomerCard({
-    Key? key,
-    required this.customer,
-    required this.onRemove,
-  }) : super(key: key);
+  const CustomerDisplayCard({
+    super.key,
+    this.selectedCustomer,
+    required this.onClearSelection,
+  });
 
   @override
   Widget build(BuildContext context) {
+    if (selectedCustomer == null) return SizedBox.shrink();
+
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
@@ -24,20 +27,20 @@ class CustomerCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Selected Customer: ${customer['name']}",
+                    "Selected Customer: ${selectedCustomer!.name}",
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text("Phone: ${customer['phone']}"),
-                  Text("Address: ${customer['address']}"),
+                  Text("Phone: ${selectedCustomer!.phone}"),
+                  Text("Address: ${selectedCustomer!.address}"),
                 ],
               ),
             ),
             IconButton(
-              onPressed: onRemove,
+              onPressed: () => onClearSelection(),
               icon: const Icon(Icons.cancel, color: Colors.red),
             ),
           ],

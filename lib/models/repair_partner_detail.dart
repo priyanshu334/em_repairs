@@ -69,4 +69,25 @@ class RepairPartnerDetailsModel {
   String toString() {
     return 'RepairPartnerDetailsModel(id: $id, isInHouse: $isInHouse, isServiceCenter: $isServiceCenter, selectedOperator: $selectedOperator, selectedServiceCenter: $selectedServiceCenter, pickupDate: $pickupDate, pickupTime: $pickupTime)';
   }
+
+  // CopyWith method for easier updates
+  RepairPartnerDetailsModel copyWith({
+    String? id,
+    bool? isInHouse,
+    bool? isServiceCenter,
+    String? selectedOperator,
+    String? selectedServiceCenter,
+    DateTime? pickupDate,
+    String? pickupTime,
+  }) {
+    return RepairPartnerDetailsModel(
+      id: id ?? this.id,
+      isInHouse: isInHouse ?? this.isInHouse,
+      isServiceCenter: isServiceCenter ?? this.isServiceCenter,
+      selectedOperator: selectedOperator ?? this.selectedOperator,
+      selectedServiceCenter: selectedServiceCenter ?? this.selectedServiceCenter,
+      pickupDate: pickupDate ?? this.pickupDate,
+      pickupTime: pickupTime ?? this.pickupTime,
+    );
+  }
 }

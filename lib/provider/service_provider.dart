@@ -1,5 +1,6 @@
 import 'package:appwrite/appwrite.dart';
 import 'package:em_repairs/models/service_provider_model.dart';
+
 import 'package:em_repairs/services/apwrite_service.dart';
 import 'package:flutter/material.dart';
 
@@ -8,8 +9,8 @@ class ServiceProviderProvider extends ChangeNotifier {
   final List<ServiceProviderModel> _serviceProviders = [];
   ServiceProviderModel? _selectedServiceProvider;
 
-  static const String databaseId = '678241a4000c5def62aa'; // Replace with your actual database ID
-  static const String collectionId = '6782c78e001ced0a18e8'; // Replace with your actual collection ID
+  static const String databaseId = '678690d10024689b7151'; // Replace with your actual database ID
+  static const String collectionId = '678697a00012137cbd2b'; // Replace with your actual collection ID
 
   ServiceProviderProvider(this._appwriteService);
 
@@ -24,7 +25,7 @@ class ServiceProviderProvider extends ChangeNotifier {
     try {
       final databases = Databases(_appwriteService.client);
       final response = await databases.listDocuments(
-        databaseId: databaseId, 
+        databaseId: databaseId,
         collectionId: collectionId,
       );
 
@@ -32,7 +33,7 @@ class ServiceProviderProvider extends ChangeNotifier {
       for (var doc in response.documents) {
         _serviceProviders.add(ServiceProviderModel.fromMap(
           doc.data,
-          doc.$id, // Pass the document's ID
+           // Pass the document's ID to the model
         ));
       }
       notifyListeners();
@@ -48,14 +49,14 @@ class ServiceProviderProvider extends ChangeNotifier {
       final response = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: serviceProvider.id, // Let Appwrite generate a unique ID
+        documentId: ID.unique(),
         data: serviceProvider.toMap(),
       );
 
-      // Add the newly created service provider with ID
+      // Add the newly created service provider with the ID returned by Appwrite
       _serviceProviders.add(ServiceProviderModel.fromMap(
         response.data,
-        response.$id, // Use the response's $id
+         // Use the response's $id as the ID
       ));
       notifyListeners();
     } catch (e) {
@@ -64,17 +65,18 @@ class ServiceProviderProvider extends ChangeNotifier {
   }
 
   // Update a service provider in Appwrite and the list
-  Future<void> updateServiceProvider(ServiceProviderModel serviceProvider) async {
+  Future<void> updateServiceProvider(ServiceProviderModel serviceProvider, String id) async {
     try {
       final databases = Databases(_appwriteService.client);
       await databases.updateDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: serviceProvider.id, // Use the service provider ID to update
+        documentId: id, // Use the provided ID for the update
         data: serviceProvider.toMap(),
       );
 
-      final index = _serviceProviders.indexWhere((sp) => sp.id == serviceProvider.id);
+      // Find the index of the updated service provider and update it
+      final index = _serviceProviders.indexWhere((sp) => sp.id == id);
       if (index != -1) {
         _serviceProviders[index] = serviceProvider;
         notifyListeners();
@@ -85,16 +87,16 @@ class ServiceProviderProvider extends ChangeNotifier {
   }
 
   // Remove a service provider from Appwrite and the list
-  Future<void> removeServiceProvider(ServiceProviderModel serviceProvider) async {
+  Future<void> removeServiceProvider(String id) async {
     try {
       final databases = Databases(_appwriteService.client);
       await databases.deleteDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: serviceProvider.id, // Use the service provider ID
+        documentId: id, // Use the service provider's ID for removal
       );
 
-      _serviceProviders.remove(serviceProvider);
+      _serviceProviders.removeWhere((provider) => provider.id == id);  // Remove by ID
       notifyListeners();
     } catch (e) {
       debugPrint('Error removing service provider: $e');
@@ -135,7 +137,7 @@ class ServiceProviderProvider extends ChangeNotifier {
           collectionId: collectionId,
           documentId: id,
         );
-        fetchedServiceProviders.add(ServiceProviderModel.fromMap(response.data, response.$id)); // Map document to ServiceProviderModel
+        fetchedServiceProviders.add(ServiceProviderModel.fromMap(response.data)); // Map document to ServiceProviderModel
       }
 
       return fetchedServiceProviders;

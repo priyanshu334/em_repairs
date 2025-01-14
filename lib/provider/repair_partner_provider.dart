@@ -8,8 +8,8 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
   final List<RepairPartnerDetailsModel> _repairPartnerDetailsList = [];
   RepairPartnerDetailsModel? _selectedRepairPartnerDetails;
 
-  static const String databaseId = '678241a4000c5def62aa';
-  static const String collectionId = '6782c680002d2b6aa19c';
+  static const String databaseId = '678690d10024689b7151';
+  static const String collectionId = '67869633001729c68a68';
 
   RepairPartnerDetailsProvider(this._appwriteService);
 

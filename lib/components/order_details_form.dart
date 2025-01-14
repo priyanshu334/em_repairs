@@ -3,19 +3,19 @@ import 'package:em_repairs/provider/order_details_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class OrderDetails extends StatefulWidget {
+class OrderDetailsForm extends StatefulWidget {
   final Function(OrderDetailsModel order) onOrderAdded; // Callback for the entire order object
 
-  const OrderDetails({
+  const OrderDetailsForm({
     Key? key,
     required this.onOrderAdded,
   }) : super(key: key);
 
   @override
-  _OrderDetailsState createState() => _OrderDetailsState();
+  _OrderDetailsFormState createState() => _OrderDetailsFormState();
 }
 
-class _OrderDetailsState extends State<OrderDetails> {
+class _OrderDetailsFormState extends State<OrderDetailsForm> {
   final TextEditingController _deviceModelController = TextEditingController();
   final TextEditingController _problemController = TextEditingController();
   final List<String> _problems = [];

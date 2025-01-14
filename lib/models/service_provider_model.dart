@@ -1,11 +1,13 @@
+import 'package:flutter/material.dart';
+
 class ServiceProviderModel {
-  final String id; // Required 'id'
+  final String? id; // 'id' is now nullable
   final String name;
   final String contactNo;
   final String description;
 
   ServiceProviderModel({
-    required this.id, // 'id' is now required
+    this.id, // Nullable 'id'
     required this.name,
     required this.contactNo,
     required this.description,
@@ -14,7 +16,6 @@ class ServiceProviderModel {
   // Convert the model to a map (for Appwrite Database operations)
   Map<String, dynamic> toMap() {
     return {
-      'id': id, // Include 'id' in the map
       'name': name,
       'contactNo': contactNo,
       'description': description,
@@ -22,11 +23,11 @@ class ServiceProviderModel {
   }
 
   // Create a model from a map (useful for parsing Appwrite's response)
-  factory ServiceProviderModel.fromMap(Map<String, dynamic> map, String documentId) {
+  factory ServiceProviderModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
     return ServiceProviderModel(
-      id: documentId, // Use the document ID from Appwrite response
+      id: documentId, // Use the document ID from Appwrite response (nullable)
       name: map['name'] ?? '',
-      contactNo: map['contactNo'] ?? '', // Fixed the key to 'contactNo'
+      contactNo: map['contactNo'] ?? '',
       description: map['description'] ?? '',
     );
   }
@@ -36,7 +37,7 @@ class ServiceProviderModel {
     return 'ServiceProviderModel(id: $id, name: $name, contactNo: $contactNo, description: $description)';
   }
 
-  // CopyWith method for creating modified copies
+  // CopyWith method for easier updates
   ServiceProviderModel copyWith({
     String? id,
     String? name,

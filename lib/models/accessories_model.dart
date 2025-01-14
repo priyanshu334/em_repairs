@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
+
 class AccessoriesModel {
-  final String? id; // Optional ID field
+  final String? id; // Nullable ID
   final bool isPowerAdapterChecked;
   final bool isKeyboardChecked;
   final bool isMouseChecked;
@@ -9,7 +11,7 @@ class AccessoriesModel {
   final DateTime? warrantyDate;
 
   AccessoriesModel({
-    this.id, // ID is now optional
+    this.id, // Nullable 'id'
     this.isPowerAdapterChecked = false,
     this.isKeyboardChecked = false,
     this.isMouseChecked = false,
@@ -19,7 +21,44 @@ class AccessoriesModel {
     this.warrantyDate,
   });
 
-  // CopyWith method for updating fields
+  // Convert the model to a map (for Appwrite Database operations)
+  Map<String, dynamic> toMap() {
+    return {
+      'isPowerAdapterChecked': isPowerAdapterChecked,
+      'isKeyboardChecked': isKeyboardChecked,
+      'isMouseChecked': isMouseChecked,
+      'otherAccessories': otherAccessories,
+      'additionalDetails': additionalDetails,
+      'isWarrantyChecked': isWarrantyChecked,
+      'warrantyDate': warrantyDate?.toIso8601String(),
+    };
+  }
+
+  // Create a model from a map (useful for parsing Appwrite's response)
+  factory AccessoriesModel.fromMap(Map<String, dynamic> map, {String? id}) {
+    return AccessoriesModel(
+      id: id, // Use the document ID from Appwrite response (nullable)
+      isPowerAdapterChecked: map['isPowerAdapterChecked'] ?? false,
+      isKeyboardChecked: map['isKeyboardChecked'] ?? false,
+      isMouseChecked: map['isMouseChecked'] ?? false,
+      otherAccessories: List<String>.from(map['otherAccessories'] ?? []),
+      additionalDetails: map['additionalDetails'],
+      isWarrantyChecked: map['isWarrantyChecked'] ?? false,
+      warrantyDate: map['warrantyDate'] != null
+          ? DateTime.parse(map['warrantyDate'])
+          : null,
+    );
+  }
+
+  @override
+  String toString() {
+    return 'AccessoriesModel(id: $id, isPowerAdapterChecked: $isPowerAdapterChecked, '
+        'isKeyboardChecked: $isKeyboardChecked, isMouseChecked: $isMouseChecked, '
+        'otherAccessories: $otherAccessories, additionalDetails: $additionalDetails, '
+        'isWarrantyChecked: $isWarrantyChecked, warrantyDate: $warrantyDate)';
+  }
+
+  // CopyWith method for easier updates
   AccessoriesModel copyWith({
     String? id,
     bool? isPowerAdapterChecked,
@@ -40,43 +79,5 @@ class AccessoriesModel {
       isWarrantyChecked: isWarrantyChecked ?? this.isWarrantyChecked,
       warrantyDate: warrantyDate ?? this.warrantyDate,
     );
-  }
-
-  // Convert the model to a map for database or API use
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'isPowerAdapterChecked': isPowerAdapterChecked,
-      'isKeyboardChecked': isKeyboardChecked,
-      'isMouseChecked': isMouseChecked,
-      'otherAccessories': otherAccessories,
-      'additionalDetails': additionalDetails,
-      'isWarrantyChecked': isWarrantyChecked,
-      'warrantyDate': warrantyDate?.toIso8601String(),
-    };
-  }
-
-  // Create a model from a map (useful for API/database responses)
-  factory AccessoriesModel.fromMap(Map<String, dynamic> map, {String? id}) {
-    return AccessoriesModel(
-      id: id ?? map['id'], // Set the ID if provided
-      isPowerAdapterChecked: map['isPowerAdapterChecked'] ?? false,
-      isKeyboardChecked: map['isKeyboardChecked'] ?? false,
-      isMouseChecked: map['isMouseChecked'] ?? false,
-      otherAccessories: List<String>.from(map['otherAccessories'] ?? []),
-      additionalDetails: map['additionalDetails'],
-      isWarrantyChecked: map['isWarrantyChecked'] ?? false,
-      warrantyDate: map['warrantyDate'] != null
-          ? DateTime.parse(map['warrantyDate'])
-          : null,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'AccessoriesModel(id: $id, isPowerAdapterChecked: $isPowerAdapterChecked, '
-        'isKeyboardChecked: $isKeyboardChecked, isMouseChecked: $isMouseChecked, '
-        'otherAccessories: $otherAccessories, additionalDetails: $additionalDetails, '
-        'isWarrantyChecked: $isWarrantyChecked, warrantyDate: $warrantyDate)';
   }
 }

@@ -10,7 +10,7 @@ class AppwriteService {
   AppwriteService() {
     client = Client()
       ..setEndpoint('https://cloud.appwrite.io/v1') // Replace with your Appwrite server endpoint
-      ..setProject('6782414f002ff29452cc') // Replace with your project ID
+      ..setProject('6786907f002851a39732') // Replace with your project ID
       ..setSelfSigned(status: true); // For self-signed certificates in development
 
     account = Account(client);

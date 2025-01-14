@@ -1,7 +1,9 @@
+import 'package:em_repairs/models/model_details_model.dart';
 import 'package:flutter/material.dart';
 import 'image_capture_grid.dart';
 
-void showModelDetailsDialog(BuildContext context) {
+
+void showModelDetailsDialog(BuildContext context, Function(ModelDetailsModel) onModelCaptured) {
   showDialog(
     context: context,
     builder: (context) {
@@ -30,7 +32,19 @@ void showModelDetailsDialog(BuildContext context) {
                 ],
               ),
               const SizedBox(height: 16),
-              ImageCaptureGrid(),
+              // Pass the callback function to handle the captured model ID
+              ImageCaptureGrid(
+                onModelCaptured: (modelDetails) {
+                  // Call the callback passed from the parent
+                  onModelCaptured(modelDetails);
+
+                  // Show a Snackbar with the captured model ID or details
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Captured Model ID: ${modelDetails.id}')),
+                  );
+                  Navigator.pop(context); // Close the dialog after capturing the model
+                },
+              ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -40,7 +54,7 @@ void showModelDetailsDialog(BuildContext context) {
                       Navigator.pop(context); // Close the dialog
                     },
                     icon: const Icon(Icons.cancel, color: Colors.white),
-                    label: const Text("Cancel",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+                    label: const Text("Cancel", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.teal.shade600,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -58,7 +72,7 @@ void showModelDetailsDialog(BuildContext context) {
                       );
                     },
                     icon: const Icon(Icons.check, color: Colors.white),
-                    label: const Text("Done",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold),),
+                    label: const Text("Done", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red.shade600,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),

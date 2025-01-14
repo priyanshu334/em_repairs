@@ -1,9 +1,13 @@
-import 'package:em_repairs/pages/parttern_page.dart';
+import 'package:em_repairs/provider/lock_code_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:em_repairs/pages/parttern_page.dart';
+import 'package:em_repairs/models/lock_code_model.dart';
+import 'package:provider/provider.dart';
 
 class LockCode extends StatefulWidget {
-  const LockCode({super.key});
+  final Function(LockCodeModel) onGeneratedId; // Callback to send the full LockCodeModel to the parent
+
+  const LockCode({super.key, required this.onGeneratedId});
 
   @override
   State<LockCode> createState() => _LockCodeState();
@@ -11,54 +15,9 @@ class LockCode extends StatefulWidget {
 
 class _LockCodeState extends State<LockCode> {
   final TextEditingController _textController = TextEditingController();
-  List<int> _storedLockCode = [];
-  String? _storedPatternCode;
+  List<int> _enteredLockCode = [];
+  String? _enteredPatternCode;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadLockCode(); // Load saved lock code on start
-    _loadPatternCode(); // Load saved pattern code on start
-  }
-
-  // Load stored lock code from shared preferences
-  Future<void> _loadLockCode() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _storedLockCode =
-          prefs.getStringList('lock_code')?.map(int.parse).toList() ?? [];
-    });
-  }
-
-  // Load stored pattern code from shared preferences
-  Future<void> _loadPatternCode() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _storedPatternCode = prefs.getString('pattern_code');
-    });
-  }
-
-  // Store the lock code in shared preferences
-  Future<void> _saveLockCode(List<int> code) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-        'lock_code', code.map((e) => e.toString()).toList());
-
-    setState(() {
-      _storedLockCode = code;
-    });
-  }
-
-  // Store the pattern code in shared preferences
-  Future<void> _savePatternCode(String code) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('pattern_code', code);
-    setState(() {
-      _storedPatternCode = code;
-    });
-  }
-
-  // Function to show dialog box for entering lock code
   void _showLockCodeDialog() {
     showDialog(
       context: context,
@@ -76,7 +35,7 @@ class _LockCodeState extends State<LockCode> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close dialog without saving
+                Navigator.pop(context);
               },
               child: const Text("Cancel"),
             ),
@@ -84,14 +43,15 @@ class _LockCodeState extends State<LockCode> {
               onPressed: () {
                 final text = _textController.text;
                 if (text.isNotEmpty && text.length > 1) {
-                  List<int> lockCode = text.split('').map(int.parse).toList();
-                  _saveLockCode(
-                      lockCode); // Save lock code to SharedPreferences
+                  setState(() {
+                    _enteredLockCode =
+                        text.split('').map(int.parse).toList();
+                  });
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Lock Code Stored: $lockCode')),
+                    SnackBar(content: Text('Lock Code Entered: $_enteredLockCode')),
                   );
                   _textController.clear();
-                  Navigator.pop(context); // Close dialog after saving
+                  Navigator.pop(context);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -107,20 +67,39 @@ class _LockCodeState extends State<LockCode> {
     );
   }
 
-  // Navigate to the PatternLockPage
   void _navigateToPatternLockPage() async {
-    final result = await Navigator.push(
+    // Create the lock code model
+    LockCodeModel newLockCode = LockCodeModel(
+      id: '', // Leave ID blank, Appwrite will generate it
+      lockCode: _enteredLockCode,
+      patternCode: _enteredPatternCode,
+    );
+
+    // Add the lock code to the provider
+    await context.read<LockCodeProvider>().addLockCode(newLockCode);
+
+    // Get the saved lock code (the one with the generated ID)
+    final LockCodeModel savedLockCode = context.read<LockCodeProvider>().lockCodes.last;
+
+    // Send the saved lock code model to the parent
+    widget.onGeneratedId(savedLockCode);
+
+    // Navigate to the PatternLockPage
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const PatternLockPage(),
+        builder: (context) => PatternLockPage(
+          onSubmit: (String patternCode) {
+            setState(() {
+              _enteredPatternCode = patternCode;
+            });
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Pattern Code Entered: $patternCode')),
+            );
+          },
+        ),
       ),
     );
-    if (result != null && result is String) {
-      _savePatternCode(result);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Pattern Code Stored: $result')),
-      );
-    }
   }
 
   @override
@@ -135,75 +114,71 @@ class _LockCodeState extends State<LockCode> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: _showLockCodeDialog, // Open dialog to set lock code
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.pink.shade600, // Slightly darker pink
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8), // Less rounded
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _showLockCodeDialog,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal.shade600,
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 5,
               ),
-              elevation: 5,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Set Lock Code",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.lock,
+              icon: const Icon(
+                Icons.lock,
+                color: Colors.white,
+                size: 24,
+              ),
+              label: const Text(
+                "Set Lock Code",
+                style: TextStyle(
                   color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _navigateToPatternLockPage, // Navigate to pattern lock page
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade600, // Slightly darker blue
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8), // Less rounded
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _navigateToPatternLockPage,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.teal.shade600,
+                padding: const EdgeInsets.symmetric(vertical: 16.0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 5,
               ),
-              elevation: 5,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Set Pattern Lock Code',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.pattern, // Use a pattern-related icon
+              icon: const Icon(
+                Icons.pattern,
+                color: Colors.white,
+                size: 24,
+              ),
+              label: const Text(
+                "Set Pattern Lock Code",
+                style: TextStyle(
                   color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
-          if (_storedLockCode.isNotEmpty)
+          if (_enteredLockCode.isNotEmpty)
             Text(
-              'Stored Lock Code: ${_storedLockCode.join(', ')}',
+              'Entered Lock Code: ${_enteredLockCode.join(', ')}',
               style: const TextStyle(fontSize: 16, color: Colors.green),
             ),
           const SizedBox(height: 20),
-          if (_storedPatternCode != null)
+          if (_enteredPatternCode != null)
             Text(
-              'Stored Pattern Code: $_storedPatternCode',
+              'Entered Pattern Code: $_enteredPatternCode',
               style: const TextStyle(fontSize: 16, color: Colors.blue),
             ),
         ],

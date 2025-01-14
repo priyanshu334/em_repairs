@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';  // Added import
+import 'package:em_repairs/provider/customer_provider.dart';  // Added import
 
 class BottomNav extends StatelessWidget {
   final int selectedIndex;
@@ -13,10 +15,23 @@ class BottomNav extends StatelessWidget {
   });
 
   // Function to launch different apps based on index
-  void _launchApp(int index) async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: '1234567890'); // Phone number to dial
-    final Uri messageUri = Uri(scheme: 'sms', path: '1234567890'); // Phone number for SMS
-    final Uri whatsappUri = Uri.parse('https://wa.me/1234567890'); // WhatsApp link
+  void _launchApp(BuildContext context, int index) async {
+    final customerProvider = Provider.of<CustomerProvider>(context, listen: false);
+    final customer = customerProvider.selectedCustomer;
+
+    if (customer == null) {
+      // Show an error message if no customer is selected
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No customer selected')),
+      );
+      return;
+    }
+
+    final String phoneNumber = customer.phone; // Get the phone number from the selected customer
+
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber); // Phone number to dial
+    final Uri messageUri = Uri(scheme: 'sms', path: phoneNumber); // Phone number for SMS
+    final Uri whatsappUri = Uri.parse('https://wa.me/$phoneNumber'); // WhatsApp link
     final Uri printUri = Uri.parse('https://example.com'); // Placeholder for Printout
 
     try {
@@ -110,7 +125,7 @@ class BottomNav extends StatelessWidget {
   }) {
     return GestureDetector(
       onTap: () {
-        _launchApp(index);
+        _launchApp(context, index); // Pass context to the _launchApp function
         onItemTapped(index);
       },
       child: AnimatedContainer(

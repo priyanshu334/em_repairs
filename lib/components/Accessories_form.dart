@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:em_repairs/models/accessories_model.dart';
+import 'package:em_repairs/provider/accesories_provider.dart';
+import 'package:provider/provider.dart';
 
 class AccessoriesForm extends StatefulWidget {
-  final Function(String accessoryName, String additionalDetails,
-      bool isWarranty, DateTime? warrantyDate)? onSubmit;
+  final Function(AccessoriesModel accessory)? onSubmit; // Pass the full model
 
   const AccessoriesForm({Key? key, this.onSubmit}) : super(key: key);
 
@@ -19,6 +21,9 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
   TextEditingController detailsController = TextEditingController();
   DateTime? selectedDate;
 
+  // Store additional accessories (other than predefined ones like power adapter)
+  List<String> otherAccessories = [];
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -30,6 +35,38 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
       setState(() {
         selectedDate = pickedDate;
       });
+    }
+  }
+
+  void _submitForm() async {
+    final String accessoryName = accessoryController.text;
+    final String additionalDetails = detailsController.text;
+    final bool warranty = isWarrantyChecked;
+    final DateTime? warrantyDate = selectedDate;
+
+    // Create an instance of AccessoriesModel
+    AccessoriesModel newAccessory = AccessoriesModel(
+      additionalDetails: additionalDetails,
+      isWarrantyChecked: warranty,
+      warrantyDate: warrantyDate,
+      isPowerAdapterChecked: isPowerAdapterChecked,
+      isKeyboardChecked: isKeyboardChecked,
+      isMouseChecked: isMouseChecked,
+      otherAccessories: otherAccessories,  // Save other accessories
+    );
+
+    // Save the accessory using the AccessoriesProvider
+    await context.read<AccessoriesProvider>().saveAccessories(newAccessory);
+
+    // Optional: Show a success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Accessory added successfully!')),
+    );
+
+    // Send the saved model back to the parent via the onSubmit callback
+    if (widget.onSubmit != null) {
+      final savedAccessory = context.read<AccessoriesProvider>().accessories.last;
+      widget.onSubmit!(savedAccessory);  // Send the saved model
     }
   }
 
@@ -148,41 +185,27 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
           SizedBox(height: 10),
 
           // Submit Button
-     
-          
-              
-               ElevatedButton(
-                onPressed: () {
-                  if (widget.onSubmit != null) {
-                    widget.onSubmit!(
-                      accessoryController.text,
-                      detailsController.text,
-                      isWarrantyChecked,
-                      selectedDate,
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal.shade600,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30.0,vertical: 5),
-                  child: Text(
-                    "Submit",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
+          ElevatedButton(
+            onPressed: _submitForm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.teal.shade600,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              padding: EdgeInsets.symmetric(vertical: 14),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 2),
+              child: Text(
+                "Submit",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
               ),
-            
-          
+            ),
+          ),
         ],
       ),
     );

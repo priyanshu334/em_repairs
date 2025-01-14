@@ -1,20 +1,30 @@
+import 'package:em_repairs/models/order_details_models.dart';
+import 'package:em_repairs/provider/order_details_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class OrderDetailsForm extends StatefulWidget {
+class OrderDetails extends StatefulWidget {
+  final Function(OrderDetailsModel order) onOrderAdded; // Callback for the entire order object
+
+  const OrderDetails({
+    Key? key,
+    required this.onOrderAdded,
+  }) : super(key: key);
+
   @override
-  _OrderDetailsFormState createState() => _OrderDetailsFormState();
+  _OrderDetailsState createState() => _OrderDetailsState();
 }
 
-class _OrderDetailsFormState extends State<OrderDetailsForm> {
+class _OrderDetailsState extends State<OrderDetails> {
   final TextEditingController _deviceModelController = TextEditingController();
   final TextEditingController _problemController = TextEditingController();
   final List<String> _problems = [];
-  String? _selectedOrderStatus;
+  String _selectedOrderStatus = 'Pending';
 
   final List<String> _orderStatusOptions = [
     'Pending',
-    'In Progress',
-    'Completed',
+    'Repaired',
+    'Delivered',
     'Cancelled',
   ];
 
@@ -33,6 +43,40 @@ class _OrderDetailsFormState extends State<OrderDetailsForm> {
     });
   }
 
+  void _onSave() async {
+    // Create the new order object without specifying the ID
+    final order = OrderDetailsModel(
+      deviceModel: _deviceModelController.text,
+      orderStatus: OrderStatus.values[_orderStatusOptions.indexOf(_selectedOrderStatus)],
+      problems: _problems,
+    );
+
+    // Use the provider to add the order to Appwrite
+    try {
+      final provider = Provider.of<OrderDetailsProvider>(context, listen: false);
+      await provider.addOrder(order); // Add order without specifying ID
+
+      // Notify the parent widget with the entire order model
+      widget.onOrderAdded(order);
+
+      // Clear the fields
+      setState(() {
+        _selectedOrderStatus = 'Pending';
+        _problems.clear();
+      });
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Order added successfully!")),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error saving order: $e")),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -46,7 +90,7 @@ class _OrderDetailsFormState extends State<OrderDetailsForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "Order Status",
+                "Order Details",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -54,31 +98,10 @@ class _OrderDetailsFormState extends State<OrderDetailsForm> {
                 ),
               ),
               const SizedBox(height: 16),
-              DropdownButton<String>(
-                isExpanded: true,
-                value: _selectedOrderStatus,
-                hint: const Text('Select Order Status'),
-                items: _orderStatusOptions.map((status) {
-                  return DropdownMenuItem(
-                    value: status,
-                    child: Text(status),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedOrderStatus = value;
-                  });
-                },
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Device Model:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
               TextField(
                 controller: _deviceModelController,
                 decoration: InputDecoration(
-                  labelText: 'Enter Model',
+                  labelText: "Enter Device Model",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -87,8 +110,39 @@ class _OrderDetailsFormState extends State<OrderDetailsForm> {
               ),
               const SizedBox(height: 16),
               const Text(
-                'Problems List:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                "Order Status",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedOrderStatus,
+                items: _orderStatusOptions.map((status) {
+                  return DropdownMenuItem(
+                    value: status,
+                    child: Text(status),
+                  );
+                }).toList(),
+                onChanged: (newValue) {
+                  setState(() {
+                    _selectedOrderStatus = newValue!;
+                  });
+                },
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Problems List",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
               Row(
                 children: [
@@ -107,7 +161,21 @@ class _OrderDetailsFormState extends State<OrderDetailsForm> {
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: _addProblem,
-                    child: const Text('Add'),
+                    child: const Text(
+                      'Add',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.teal.shade600,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
                   ),
                 ],
               ),
@@ -125,6 +193,27 @@ class _OrderDetailsFormState extends State<OrderDetailsForm> {
                     ),
                   );
                 },
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _onSave,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal.shade600,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  child: const Text(
+                    "Save Order",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

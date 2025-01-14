@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:em_repairs/models/customer_model.dart';  // Import the CustomerModel
 
 class SelectedCustomerCard extends StatelessWidget {
-  final Map<String, String> customer;
+  final CustomerModel customer;  // Changed from Map<String, String> to CustomerModel
   final VoidCallback onRemove;
 
   const SelectedCustomerCard({
@@ -59,7 +60,7 @@ class SelectedCustomerCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "Name: ${customer['name']}",
+                          "Name: ${customer.name ?? 'N/A'}",  // Accessing the 'name' directly from the model
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
@@ -81,7 +82,7 @@ class SelectedCustomerCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "Phone: ${customer['phone']}",
+                          "Phone: ${customer.phone ?? 'N/A'}",  // Accessing the 'phone' directly
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,
@@ -103,7 +104,7 @@ class SelectedCustomerCard extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          "Address: ${customer['address']}",
+                          "Address: ${customer.address ?? 'N/A'}",  // Accessing the 'address' directly
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
                             fontSize: 16,

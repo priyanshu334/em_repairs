@@ -1,4 +1,11 @@
+import 'package:em_repairs/components/service_center_details.dart';
+import 'package:em_repairs/provider/customer_provider.dart';
+import 'package:em_repairs/provider/service_center_provider.dart';
+import 'package:em_repairs/provider/service_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Import provider package
+
+import 'package:em_repairs/services/apwrite_service.dart';
 
 class FiltersSection extends StatefulWidget {
   final Function(String)? onCustomerNameChanged;
@@ -24,6 +31,7 @@ class FiltersSection extends StatefulWidget {
 
 class _FiltersSectionState extends State<FiltersSection> {
   DateTime? selectedDate;
+  String customerSearchQuery = "";
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -41,6 +49,11 @@ class _FiltersSectionState extends State<FiltersSection> {
 
   @override
   Widget build(BuildContext context) {
+    // Fetch the CustomerProvider and ServiceProviderProvider instances
+    final customerProvider = Provider.of<CustomerProvider>(context);
+    final serviceProviderProvider =
+        Provider.of<ServiceProviderProvider>(context);
+    final serviceCenterProvider = Provider.of<ServiceCenterProvider>(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -54,47 +67,69 @@ class _FiltersSectionState extends State<FiltersSection> {
             filled: true,
             fillColor: Colors.grey.shade100,
           ),
-          onChanged: widget.onCustomerNameChanged,
+          onChanged: (value) {
+            setState(() {
+              customerSearchQuery = value;
+            });
+            customerProvider.searchCustomers(value!); // Trigger search
+            if (widget.onCustomerNameChanged != null) {
+              widget.onCustomerNameChanged!(value);
+            }
+          },
         ),
         SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-          ),
-          hint: Text('Select Operator'),
-          items: <String>['Operator 1', 'Operator 2', 'Operator 3']
-              .map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: widget.onOperatorChanged,
-        ),
+
+        // Operator Dropdown
+        serviceProviderProvider.serviceProviders.isNotEmpty
+            ? DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
+                hint: Text('Select Operator'),
+                items: serviceProviderProvider.serviceProviders
+                    .map<DropdownMenuItem<String>>((serviceProvider) {
+                  return DropdownMenuItem<String>(
+                    value: serviceProvider.id,
+                    child: Text(serviceProvider.name), // Display operator name
+                  );
+                }).toList(),
+                onChanged: widget.onOperatorChanged,
+              )
+            : Center(
+                child:
+                    CircularProgressIndicator()), // Show loading while fetching
+
         SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-          ),
-          hint: Text('Select Order'),
-          items: <String>['Order 1', 'Order 2', 'Order 3']
-              .map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
-            );
-          }).toList(),
-          onChanged: widget.onOrderChanged,
-        ),
+
+        serviceCenterProvider.serviceCenters.isNotEmpty
+            ? DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey.shade100,
+                ),
+                hint: Text('Select service center'),
+                items: serviceCenterProvider.serviceCenters
+                    .map<DropdownMenuItem<String>>((serviceProvider) {
+                  return DropdownMenuItem<String>(
+                    value: serviceProvider.id,
+                    child: Text(serviceProvider.name), // Display operator name
+                  );
+                }).toList(),
+                onChanged: widget.onOperatorChanged,
+              )
+            : Center(
+                child:
+                    CircularProgressIndicator()), // Show loading while fetching
+
         SizedBox(height: 16),
+
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
             border: OutlineInputBorder(
@@ -114,6 +149,7 @@ class _FiltersSectionState extends State<FiltersSection> {
           onChanged: widget.onLocationChanged,
         ),
         SizedBox(height: 16),
+
         Row(
           children: [
             Expanded(
@@ -147,7 +183,10 @@ class _FiltersSectionState extends State<FiltersSection> {
               ),
               child: Text(
                 "Today",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14,color: Colors.white),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white),
               ),
             ),
             SizedBox(width: 10),
@@ -162,11 +201,38 @@ class _FiltersSectionState extends State<FiltersSection> {
               ),
               child: Text(
                 "Search",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14,color: Colors.white),
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white),
               ),
             ),
           ],
         ),
+        // Display the search results
+        if (customerSearchQuery.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Search Results:",
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                ...customerProvider.customers
+                    .where((customer) => customer.name
+                        .toLowerCase()
+                        .contains(customerSearchQuery.toLowerCase()))
+                    .map((customer) => ListTile(
+                          title: Text(customer.name),
+                          subtitle: Text(customer.phone),
+                          onTap: () {
+                            // Handle selection if needed
+                          },
+                        ))
+                    .toList(),
+              ],
+            ),
+          ),
       ],
     );
   }

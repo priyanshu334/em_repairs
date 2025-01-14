@@ -1,8 +1,13 @@
+import 'package:appwrite/appwrite.dart';
 import 'package:em_repairs/components/custom_app_bar.dart';
+import 'package:em_repairs/pages/help_page.dart';
+import 'package:em_repairs/models/service_provider_model.dart';
+import 'package:em_repairs/provider/service_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ListPage extends StatefulWidget {
-  const ListPage({super.key});
+  const ListPage({Key? key}) : super(key: key);
 
   @override
   _ListPageState createState() => _ListPageState();
@@ -10,86 +15,94 @@ class ListPage extends StatefulWidget {
 
 class _ListPageState extends State<ListPage> {
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _serviceController = TextEditingController();
+  final TextEditingController _contactNoController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  bool _isEditing = false;
+  ServiceProviderModel? _editingServiceProvider;
 
-  final List<Map<String, dynamic>> _entries = [];
-  int? _editingIndex;
-
-  void _addEntry() {
-    if (_nameController.text.isNotEmpty &&
-        _serviceController.text.isNotEmpty &&
-        _descriptionController.text.isNotEmpty) {
-      final newEntry = {
-        'name': _nameController.text,
-        'service': _serviceController.text,
-        'description': _descriptionController.text,
-        'isScored': false,
-      };
-
-      setState(() {
-        _entries.add(newEntry);
-      });
-      _clearFields();
-    }
-  }
-
-  void _updateEntry() {
-    if (_nameController.text.isNotEmpty &&
-        _serviceController.text.isNotEmpty &&
-        _descriptionController.text.isNotEmpty &&
-        _editingIndex != null) {
-      setState(() {
-        _entries[_editingIndex!] = {
-          'name': _nameController.text,
-          'service': _serviceController.text,
-          'description': _descriptionController.text,
-          'isScored': _entries[_editingIndex!]['isScored'],
-        };
-        _editingIndex = null;
-      });
-      _clearFields();
-    }
-  }
-
-  void _toggleScoredStatus(int index) {
-    setState(() {
-      _entries[index]['isScored'] = !_entries[index]['isScored'];
+  @override
+  void initState() {
+    super.initState();
+    // Fetch data on initial load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ServiceProviderProvider>(context, listen: false).fetchServiceProviders();
     });
   }
 
-  void _deleteEntry(int index) {
-    setState(() {
-      _entries.removeAt(index);
-    });
+  void _submitDetails(ServiceProviderProvider provider) {
+    final name = _nameController.text.trim();
+    final contactNo = _contactNoController.text.trim();
+    final description = _descriptionController.text.trim();
+
+    if (name.isNotEmpty && contactNo.isNotEmpty && description.isNotEmpty) {
+      final serviceProvider = ServiceProviderModel(
+        id: _isEditing ? _editingServiceProvider!.id : 'unique()', // Use the existing ID for editing, or let Appwrite generate a new one
+        name: name,
+        contactNo: contactNo,
+        description: description,
+      );
+
+      if (_isEditing) {
+        provider.updateServiceProvider(serviceProvider);
+      } else {
+        provider.addServiceProvider(serviceProvider);
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_isEditing ? 'Service Provider Updated' : 'Service Provider Added: $name')),
+      );
+
+      _clearFields();
+      setState(() {
+        _isEditing = false;
+        _editingServiceProvider = null;
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+    }
   }
 
   void _clearFields() {
     _nameController.clear();
-    _serviceController.clear();
+    _contactNoController.clear();
     _descriptionController.clear();
   }
 
-  void _setEditingEntry(int index) {
+  void _editServiceProvider(ServiceProviderModel serviceProvider) {
+    _nameController.text = serviceProvider.name;
+    _contactNoController.text = serviceProvider.contactNo;
+    _descriptionController.text = serviceProvider.description;
     setState(() {
-      _nameController.text = _entries[index]['name'];
-      _serviceController.text = _entries[index]['service'];
-      _descriptionController.text = _entries[index]['description'];
-      _editingIndex = index;
+      _isEditing = true;
+      _editingServiceProvider = serviceProvider;
     });
+  }
+
+  void _deleteServiceProvider(ServiceProviderModel serviceProvider, ServiceProviderProvider provider) {
+    provider.removeServiceProvider(serviceProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${serviceProvider.name} removed')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<ServiceProviderProvider>(context);
+
     return Scaffold(
       appBar: CustomAppBar(
-        title: "Service Operator",
-        leadingIcon: Icons.build,
+        title: "Service Providers",
+        leadingIcon: Icons.business_center,
         actions: [
           IconButton(
-            icon: const Icon(Icons.help),
+            icon: Icon(Icons.help_outline, color: Colors.white),
             onPressed: () {
-              // Add search functionality here
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => HelpPage()),
+              );
             },
           ),
         ],
@@ -105,7 +118,7 @@ class _ListPageState extends State<ListPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "Service Entries",
+                  "Service Provider Details",
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -113,112 +126,84 @@ class _ListPageState extends State<ListPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                _buildTextField(
+                TextField(
                   controller: _nameController,
-                  labelText: "Name",
-                  icon: Icons.person,
-                  
+                  decoration: InputDecoration(
+                    labelText: "Provider Name",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.person),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _serviceController,
-                  labelText: "Service",
-                  icon: Icons.design_services,
+                TextField(
+                  controller: _contactNoController,
+                  decoration: InputDecoration(
+                    labelText: "Contact Number",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.phone),
+                  ),
                 ),
                 const SizedBox(height: 16),
-                _buildTextField(
+                TextField(
                   controller: _descriptionController,
-                  labelText: "Description",
-                  icon: Icons.description,
+                  decoration: InputDecoration(
+                    labelText: "Description",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: const Icon(Icons.description),
+                  ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: _editingIndex == null ? _addEntry : _updateEntry,
+                        onPressed: () => _submitDetails(provider),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.teal.shade700,
+                          backgroundColor: Colors.teal.shade600,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(
-                          _editingIndex == null ? "Submit" : "Update",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: _clearFields,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text(
-                          "Cancel",
-                          style: TextStyle(fontWeight: FontWeight.bold,color: Colors.white),
-                        ),
+                        child: Text(_isEditing ? "Update Provider" : "Add Provider"),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
+                const Divider(thickness: 1),
+                const SizedBox(height: 8),
+                Text(
+                  "List of Service Providers",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueAccent,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Expanded(
                   child: ListView.builder(
-                    itemCount: _entries.length,
+                    itemCount: provider.serviceProviders.length,
                     itemBuilder: (context, index) {
-                      final entry = _entries[index];
+                      final serviceProvider = provider.serviceProviders[index];
                       return Card(
                         elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: const BorderSide(color: Colors.black),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        margin: const EdgeInsets.symmetric(vertical: 8),
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.black,
-                            child: Text(
-                              entry['name'][0].toUpperCase(),
-                              style: const TextStyle(color: Colors.white),
-                            ),
+                          title: Text(serviceProvider.name),
+                          subtitle: Text(serviceProvider.contactNo),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => _deleteServiceProvider(serviceProvider, provider),
                           ),
-                          title: Text(
-                            entry['name'],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Text(
-                            '${entry['service']} - ${entry['description']}',
-                          ),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(
-                                  entry['isScored']
-                                      ? Icons.check_box
-                                      : Icons.check_box_outline_blank,
-                                  color: Colors.green,
-                                ),
-                                onPressed: () => _toggleScoredStatus(index),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue),
-                                onPressed: () => _setEditingEntry(index),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteEntry(index),
-                              ),
-                            ],
-                          ),
+                          onTap: () => _editServiceProvider(serviceProvider),
                         ),
                       );
                     },
@@ -230,31 +215,5 @@ class _ListPageState extends State<ListPage> {
         ),
       ),
     );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    required IconData icon,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: labelText,
-        prefixIcon: Icon(icon, color: Colors.black),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _serviceController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 }

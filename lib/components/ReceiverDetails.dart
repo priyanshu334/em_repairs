@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:em_repairs/models/receiver_model.dart';
+import 'package:em_repairs/provider/receiver_provider.dart'; // Import receiver provider
 
 class ReceiverDetails extends StatefulWidget {
-  const ReceiverDetails({Key? key}) : super(key: key);
+  final Function(ReceiverDetailsModel receiver) onReceiverAdded; // Callback for the entire receiver model
+
+  const ReceiverDetails({Key? key, required this.onReceiverAdded}) : super(key: key);
 
   @override
   _ReceiverDetailsState createState() => _ReceiverDetailsState();
@@ -13,7 +18,15 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
   bool isStaff = false;
 
   @override
+  void dispose() {
+    _nameController.dispose(); // Dispose the controller to prevent memory leaks
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final receiverDetailsProvider = Provider.of<ReceiverDetailsProvider>(context);
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Card(
@@ -91,6 +104,49 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final receiver = ReceiverDetailsModel(
+                      id: null, // Let Appwrite generate the ID
+                      name: _nameController.text,
+                      isOwner: isOwner,
+                      isStaff: isStaff,
+                    );
+
+                    // Add receiver and let Appwrite generate the ID
+                    await receiverDetailsProvider.addReceiver(receiver);
+
+                    // Notify the parent widget with the entire receiver model
+                    widget.onReceiverAdded(receiver);
+
+                    if (mounted) {
+                      setState(() {
+                        isOwner = false;
+                        isStaff = false;
+                      });
+                    }
+                  } catch (e) {
+                    debugPrint('Error adding receiver: $e');
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal.shade600,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  "Save Details",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
               ),
             ],
           ),

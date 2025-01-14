@@ -1,11 +1,14 @@
+import 'package:em_repairs/provider/customer_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+import 'package:em_repairs/models/customer_model.dart';
 
 class AddCustomerForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController nameController;
   final TextEditingController phoneController;
   final TextEditingController addressController;
-  final VoidCallback onAdd;
 
   const AddCustomerForm({
     super.key,
@@ -13,7 +16,6 @@ class AddCustomerForm extends StatelessWidget {
     required this.nameController,
     required this.phoneController,
     required this.addressController,
-    required this.onAdd,
   });
 
   @override
@@ -91,7 +93,31 @@ class AddCustomerForm extends StatelessWidget {
         ),
         _buildActionButton(
           text: "Add",
-          onPressed: onAdd,
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              // Generate UUID for the customer
+              String customerId = Uuid().v4(); // Generate a unique ID for the customer
+
+              // Create CustomerModel with the input data
+              CustomerModel newCustomer = CustomerModel(
+                id: customerId, // Set the generated UUID
+                name: nameController.text,
+                phone: phoneController.text,
+                address: addressController.text,
+              );
+
+              // Add the new customer directly to the provider
+              context.read<CustomerProvider>().addCustomer(newCustomer);
+
+              // Clear input fields
+              nameController.clear();
+              phoneController.clear();
+              addressController.clear();
+
+              // Close the dialog
+              Navigator.pop(context);
+            }
+          },
           color: Colors.teal,
         ),
       ],

@@ -1,7 +1,10 @@
+import 'package:em_repairs/components/custom_app_bar.dart';
 import 'package:flutter/material.dart';
 
 class PatternLockPage extends StatefulWidget {
-  const PatternLockPage({super.key});
+  final Function(String) onSubmit; // Callback to send the lock code to the parent
+
+  const PatternLockPage({super.key, required this.onSubmit});
 
   @override
   State<PatternLockPage> createState() => _PatternLockPageState();
@@ -27,13 +30,20 @@ class _PatternLockPageState extends State<PatternLockPage> {
     });
   }
 
-  // Function to save the pattern lock code (for simplicity, just saving as a string of indices)
-  Future<void> _savePatternLockCode() async {
+  // Function to save the pattern lock code and pass it to the parent
+  void _submitPattern() {
+    if (_pattern.isEmpty) {
+      setState(() {
+        _isPatternValid = false;
+      });
+      return;
+    }
     String patternCode = _pattern.join(','); // Convert pattern to a string
-    // You can save this string using SharedPreferences or a database here
+    widget.onSubmit(patternCode); // Pass the pattern to the parent
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Pattern saved: $patternCode')),
+      SnackBar(content: Text('Pattern submitted: $patternCode')),
     );
+    _resetPattern(); // Optionally reset the pattern after submission
   }
 
   @override
@@ -125,7 +135,7 @@ class _PatternLockPageState extends State<PatternLockPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Reset button with animation
+              // Reset button
               AnimatedOpacity(
                 opacity: _pattern.isEmpty ? 0 : 1,
                 duration: const Duration(milliseconds: 500),
@@ -146,13 +156,30 @@ class _PatternLockPageState extends State<PatternLockPage> {
                 ),
               ),
               const SizedBox(height: 20),
+              // Submit button
+              ElevatedButton(
+                onPressed: _submitPattern,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.greenAccent,
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 8,
+                ),
+                child: const Text(
+                  'Submit Pattern',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 20),
               // Feedback message (validation)
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 300),
                 child: _isPatternValid
                     ? Container()
                     : const Text(
-                        "Invalid Pattern!",
+                        "Invalid Pattern! Please create a pattern before submitting.",
                         style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                       ),
               ),
@@ -162,53 +189,4 @@ class _PatternLockPageState extends State<PatternLockPage> {
       ),
     );
   }
-}
-
-class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final String title;
-  final IconData? leadingIcon;
-  final List<Widget>? actions;
-
-  const CustomAppBar({
-    Key? key,
-    required this.title,
-    this.leadingIcon,
-    this.actions,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return AppBar(
-      title: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            leadingIcon ?? Icons.add_shopping_cart,
-            color: Colors.white,
-          ),
-          SizedBox(width: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-          ),
-        ],
-      ),
-      backgroundColor: Colors.teal[600],
-      centerTitle: true,
-      elevation: 4,
-      actions: actions,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(16),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 }

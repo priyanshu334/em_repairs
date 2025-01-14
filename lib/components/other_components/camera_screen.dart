@@ -1,11 +1,16 @@
+import 'dart:io';
+import 'package:em_repairs/components/other_components/image_capture_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 class CameraScreen extends StatelessWidget {
   final String title;
   final CameraController controller;
   final Future<void> initializeControllerFuture;
-  final Function(BuildContext) onCapture;
+  final Function(String)
+      onCapture; // Callback to pass the file path to the parent
 
   const CameraScreen({
     Key? key,
@@ -80,7 +85,9 @@ class CameraScreen extends StatelessWidget {
                     children: [
                       // Capture button
                       GestureDetector(
-                        onTap: () => onCapture(context),
+                        onTap: () async {
+                          await _captureImage(context);
+                        },
                         child: Container(
                           height: 80,
                           width: 80,
@@ -126,5 +133,38 @@ class CameraScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _captureImage(BuildContext context) async {
+    try {
+      // Ensure the camera is initialized
+      await initializeControllerFuture;
+
+      // Capture the image
+      final XFile image = await controller.takePicture();
+
+      // Save the image to local storage and retrieve the file path
+      final directory = await getApplicationDocumentsDirectory();
+      final fileName =
+          DateTime.now().millisecondsSinceEpoch.toString() + '.jpg';
+      final localPath = '${directory.path}/$fileName';
+      final file = File(localPath);
+      await file.writeAsBytes(await image.readAsBytes());
+
+      // Store the file path in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('captured_image_path', localPath);
+
+      // Pass the captured image path to the parent widget via the onCapture callback
+      onCapture(localPath);
+
+      // Navigate back to the previous screen (or you can replace this with any logic you want)
+     
+    } catch (e) {
+      // Show an error message if something goes wrong
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error capturing or saving image: $e')),
+      );
+    }
   }
 }

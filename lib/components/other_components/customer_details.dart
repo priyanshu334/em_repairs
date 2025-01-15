@@ -70,7 +70,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                 if (_formKey.currentState?.validate() ?? false) {
                   final provider = Provider.of<CustomerProvider>(context, listen: false);
                   final customer = CustomerModel(
-                
                     name: nameController.text,
                     phone: phoneController.text,
                     address: addressController.text,
@@ -85,6 +84,7 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                     const SnackBar(content: Text('Customer Added')),
                   );
                   Navigator.pop(context);
+                  _loadCustomers(); // Refresh the customer list after adding
                 }
               },
               child: const Text("Add"),
@@ -111,8 +111,8 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                 setState(() {
                   _selectedCustomer = customer;
                 });
-                widget.onCustomerSelected(customer); // Send selected customer to parent
-                Navigator.pop(context, customer);
+                Navigator.pop(context);
+                widget.onCustomerSelected(_selectedCustomer); // Send selected customer to parent
               },
             ),
           ),
@@ -184,6 +184,15 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                           ),
                         ),
                       ),
+                      onChanged: (value) {
+                        // Update search results dynamically
+                        final provider = Provider.of<CustomerProvider>(context, listen: false);
+                        setState(() {
+                          _customers = provider.customers
+                              .where((customer) => customer.name.toLowerCase().contains(value.toLowerCase()))
+                              .toList();
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(width: 10),

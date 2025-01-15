@@ -4,6 +4,7 @@ import 'package:em_repairs/components/custom_app_bar.dart';
 import 'package:em_repairs/components/edit_components/repair_partner_details.dart';
 import 'package:em_repairs/components/nav_bar.dart';
 import 'package:em_repairs/components/other_components/customer_details.dart';
+import 'package:em_repairs/models/DeviceKycModels.dart';
 import 'package:em_repairs/models/device_kyc_model.dart';
 import 'package:em_repairs/models/receiver_model.dart';
 import 'package:em_repairs/models/repair_partner_detail.dart';
@@ -36,7 +37,7 @@ class _AddOrdersState extends State<AddOrders> {
   EstimateModel? _estimate;
   RepairPartnerDetailsModel? _repairPartnerDetails;
   OrderDetailsModel? _orderDetails;
-  DeviceKycModel? _deviceKyc;  // Track DeviceKycModel
+  DeviceKycModels? _deviceKyc;  // Track DeviceKycModel
 
   bool agreeToTerms = false;
 
@@ -72,7 +73,7 @@ class _AddOrdersState extends State<AddOrders> {
   }
 
   // Device KYC saved callback
-  void _handleDeviceKycSaved(DeviceKycModel deviceKyc) {
+  void _handleDeviceKycSaved(DeviceKycModels? deviceKyc) {
     setState(() {
       _deviceKyc = deviceKyc;
     });
@@ -89,7 +90,7 @@ class _AddOrdersState extends State<AddOrders> {
       final orderId = const Uuid().v4();
 
       final order = OrderModel(
-        id: orderId,
+   
         receiverDetails: _receiverDetails!,
         customer: _selectedCustomer!,
         orderDetailsModel: _orderDetails!,
@@ -146,7 +147,7 @@ class _AddOrdersState extends State<AddOrders> {
             CustomerDetails(onCustomerSelected: _handleCustomerSelected),
             OrderDetailsForm(onOrderAdded: _handleOrderDetailsAdded),
             EstimateForm(onEstimateAdded: _handleEstimateAdded),
-            DeviceKycForm(onDeviceKycSaved: _handleDeviceKycSaved), // Pass callback to DeviceKycForm
+            DeviceKycForm(onKycSaved: _handleDeviceKycSaved), // Pass callback to DeviceKycForm
             RepairPartnerDetail(onDetailsChanged: _handleRepairPartnerDetails),
             const SizedBox(height: 16),
             // Terms and Conditions Checkbox

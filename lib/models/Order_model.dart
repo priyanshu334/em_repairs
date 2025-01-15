@@ -1,10 +1,11 @@
-import 'package:em_repairs/models/order_details_models.dart';
-import 'package:flutter/material.dart';
+import 'package:em_repairs/models/DeviceKycModels.dart';
 import 'package:em_repairs/models/customer_model.dart';
 import 'package:em_repairs/models/device_kyc_model.dart';
-import 'package:em_repairs/models/estimate_form.dart';
+import 'package:em_repairs/models/order_details_models.dart';
 import 'package:em_repairs/models/receiver_model.dart';
 import 'package:em_repairs/models/repair_partner_detail.dart';
+import 'package:em_repairs/models/estimate_form.dart';
+import 'package:flutter/material.dart';
 
 class OrderModel {
   final String? id; // Make 'id' nullable
@@ -12,7 +13,7 @@ class OrderModel {
   final CustomerModel customer;
   final OrderDetailsModel orderDetailsModel;
   final EstimateModel estimate;
-  final DeviceKycModel deviceKyc;
+  final DeviceKycModels? deviceKyc; // Make deviceKyc nullable
   final RepairPartnerDetailsModel repairPartnerDetails;
 
   OrderModel({
@@ -21,36 +22,35 @@ class OrderModel {
     required this.customer,
     required this.orderDetailsModel,
     required this.estimate,
-    required this.deviceKyc,
+    this.deviceKyc, // Nullable DeviceKycModels
     required this.repairPartnerDetails,
   });
 
-  // Convert the model to a map (for database operations)
+  // Convert the model to a map (for Appwrite database operations)
   Map<String, dynamic> toMap() {
     return {
-      'id': id, // 'id' is now optional
+     
       'receiverDetails': receiverDetails.toMap(),
       'customer': customer.toMap(),
       'orderDetailsModel': orderDetailsModel.toMap(),
       'estimate': estimate.toMap(),
-      'deviceKyc': deviceKyc.toMap(),
+      'deviceKyc': deviceKyc?.toMap(), // Handle nullable values
       'repairPartnerDetails': repairPartnerDetails.toMap(),
     };
   }
 
-  // Create a model from a map (useful for parsing database responses)
-factory OrderModel.fromMap(Map<String, dynamic> map) {
-  return OrderModel(
-    id: map['id'], // 'id' is now optional and can be null
-    receiverDetails: ReceiverDetailsModel.fromMap(map['receiverDetails']),
-    customer: CustomerModel.fromMap(map['customer']),
-    orderDetailsModel: OrderDetailsModel.fromMap(map['orderDetailsModel']),
-    estimate: EstimateModel.fromMap(map['estimate']),
-    deviceKyc: DeviceKycModel.fromMap(map['deviceKyc']),
-    repairPartnerDetails: RepairPartnerDetailsModel.fromMap(map['repairPartnerDetails']),
-  );
-}
-
+  // Create a model from a map (useful for parsing Appwrite responses)
+  factory OrderModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
+    return OrderModel(
+      id: documentId, // 'id' is now optional and can be null
+      receiverDetails: ReceiverDetailsModel.fromMap(map['receiverDetails']),
+      customer: CustomerModel.fromMap(map['customer']),
+      orderDetailsModel: OrderDetailsModel.fromMap(map['orderDetailsModel']),
+      estimate: EstimateModel.fromMap(map['estimate']),
+      deviceKyc: map['deviceKyc'] != null ? DeviceKycModels.fromMap(map['deviceKyc']) : null, // Handle nullable deviceKyc
+      repairPartnerDetails: RepairPartnerDetailsModel.fromMap(map['repairPartnerDetails']),
+    );
+  }
 
   @override
   String toString() {
@@ -64,7 +64,7 @@ factory OrderModel.fromMap(Map<String, dynamic> map) {
     CustomerModel? customer,
     OrderDetailsModel? orderDetailsModel,
     EstimateModel? estimate,
-    DeviceKycModel? deviceKyc,
+    DeviceKycModels? deviceKyc, // Nullable deviceKyc
     RepairPartnerDetailsModel? repairPartnerDetails,
   }) {
     return OrderModel(
@@ -73,9 +73,8 @@ factory OrderModel.fromMap(Map<String, dynamic> map) {
       customer: customer ?? this.customer,
       orderDetailsModel: orderDetailsModel ?? this.orderDetailsModel,
       estimate: estimate ?? this.estimate,
-      deviceKyc: deviceKyc ?? this.deviceKyc,
+      deviceKyc: deviceKyc ?? this.deviceKyc, // Handle nullable deviceKyc
       repairPartnerDetails: repairPartnerDetails ?? this.repairPartnerDetails,
     );
   }
 }
-  

@@ -9,7 +9,7 @@ class OrderProvider with ChangeNotifier {
 
   // Database and Collection IDs
   final String _databaseId = '678690d10024689b7151'; // Replace with your actual database ID
-  final String _collectionId = '6786a989001e0a3c5aa3'; // Replace with your actual collection ID
+  final String _collectionId = '6786d54e00328c269e9a'; // Replace with your actual collection ID
 
   OrderProvider(this._appwriteService) {
     _databases = Databases(_appwriteService.client);
@@ -28,18 +28,22 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // If ID is null, let Appwrite generate it
-      final documentId = model.id ?? ''; // Let Appwrite generate the ID
+      final documentId = model.id ?? ''; // Empty string means Appwrite will generate the ID
 
       final response = await _databases.createDocument(
         databaseId: _databaseId,
         collectionId: _collectionId,
-        documentId: documentId, // Use provided or generated document ID
+        documentId: ID.unique(), // Use empty string to let Appwrite generate the ID
         data: model.toMap(),
       );
 
-      // Create a new model with the returned ID and add it to the list
-      final savedOrder = OrderModel.fromMap(response.data);
+      // Check if the response data is valid before proceeding
+      if (response.data == null) {
+        debugPrint('Error: No data returned from Appwrite');
+        return;
+      }
+
+      final savedOrder = OrderModel.fromMap(response.data, documentId: response.$id); // Use Appwrite's generated ID
       _orderList.add(savedOrder);
       notifyListeners();
     } catch (e) {
@@ -59,7 +63,12 @@ class OrderProvider with ChangeNotifier {
         collectionId: _collectionId,
         documentId: documentId,
       );
-      return OrderModel.fromMap(response.data); // Use document ID from response
+      
+      if (response.data == null) {
+        throw Exception('No data found for this order.');
+      }
+
+      return OrderModel.fromMap(response.data, documentId: response.$id); // Use document ID from response
     } catch (e) {
       debugPrint('Error fetching order: $e');
       throw Exception('Failed to fetch order data.');
@@ -77,9 +86,18 @@ class OrderProvider with ChangeNotifier {
         collectionId: _collectionId,
       );
 
+      if (result.documents.isEmpty) {
+        debugPrint('No orders found.');
+      }
+
       _orderList = result.documents.map((doc) {
-        return OrderModel.fromMap(doc.data); // Pass document ID for mapping
-      }).toList();
+        // Ensure doc.data is not null before accessing it
+        if (doc.data == null) {
+          debugPrint('Empty document data: ${doc.$id}');
+          return null; // Return null or handle the case gracefully
+        }
+        return OrderModel.fromMap(doc.data, documentId: doc.$id); // Pass document ID for mapping
+      }).whereType<OrderModel>().toList(); // Remove null entries
 
       notifyListeners();
     } catch (e) {

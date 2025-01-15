@@ -1,11 +1,9 @@
-import 'package:em_repairs/provider/lock_code_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:em_repairs/pages/parttern_page.dart';
 import 'package:em_repairs/models/lock_code_model.dart';
-import 'package:provider/provider.dart';
+import 'package:em_repairs/pages/parttern_page.dart';
+import 'package:flutter/material.dart';
 
 class LockCode extends StatefulWidget {
-  final Function(LockCodeModel) onGeneratedId; // Callback to send the full LockCodeModel to the parent
+  final Function(List<int>, String?) onGeneratedId; // Callback to send both lock code and pattern code to the parent
 
   const LockCode({super.key, required this.onGeneratedId});
 
@@ -68,24 +66,11 @@ class _LockCodeState extends State<LockCode> {
   }
 
   void _navigateToPatternLockPage() async {
-    // Create the lock code model
-    LockCodeModel newLockCode = LockCodeModel(
-      id: '', // Leave ID blank, Appwrite will generate it
-      lockCode: _enteredLockCode,
-      patternCode: _enteredPatternCode,
-    );
-
-    // Add the lock code to the provider
-    await context.read<LockCodeProvider>().addLockCode(newLockCode);
-
-    // Get the saved lock code (the one with the generated ID)
-    final LockCodeModel savedLockCode = context.read<LockCodeProvider>().lockCodes.last;
-
-    // Send the saved lock code model to the parent
-    widget.onGeneratedId(savedLockCode);
+    // Send both the lock code and pattern code to the parent
+    widget.onGeneratedId(_enteredLockCode, _enteredPatternCode);  // Send both to the parent
 
     // Navigate to the PatternLockPage
-    await Navigator.push(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => PatternLockPage(

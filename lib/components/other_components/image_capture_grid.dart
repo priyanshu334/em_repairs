@@ -1,16 +1,12 @@
 import 'dart:io';
-import 'package:em_repairs/models/model_details_model.dart';
-import 'package:em_repairs/provider/model_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:em_repairs/components/other_components/camera_screen.dart';
-import 'package:provider/provider.dart';
- // Import the provider
 
 class ImageCaptureGrid extends StatefulWidget {
-  final Function(ModelDetailsModel) onModelCaptured;  // Change callback to accept the entire model
+  final Function(String frontImagePath, String backImagePath, String sideImage1Path, String sideImage2Path) onImagesCaptured;
 
-  const ImageCaptureGrid({super.key, required this.onModelCaptured});
+  const ImageCaptureGrid({super.key, required this.onImagesCaptured});
 
   @override
   _ImageCaptureGridState createState() => _ImageCaptureGridState();
@@ -21,17 +17,19 @@ class _ImageCaptureGridState extends State<ImageCaptureGrid> {
   late CameraController _controller;
   late Future<void> _initializeControllerFuture;
 
-  // Reference to ModelDetailsProvider
-  late ModelDetailsModel _modelDetails;
+  // Variables to hold the captured image paths
+  String frontImagePath = '';
+  String backImagePath = '';
+  String sideImage1Path = '';
+  String sideImage2Path = '';
 
   @override
   void initState() {
     super.initState();
-    _modelDetails = ModelDetailsModel();  // Do not generate ID manually, let Appwrite handle it
     // Fetch the available cameras
     availableCameras().then((availableCameras) {
       cameras = availableCameras;
-      _initializeCamera(cameras.first);  // Initialize the first camera by default
+      _initializeCamera(cameras.first); // Initialize the first camera by default
     });
   }
 
@@ -56,23 +54,23 @@ class _ImageCaptureGridState extends State<ImageCaptureGrid> {
       padding: const EdgeInsets.all(16),
       children: [
         _buildIcon(Icons.camera_front, "Device Front", () {
-          _navigateToCameraScreen("Device Front", 'frontImagePath');
+          _navigateToCameraScreen("Device Front", 'front');
         }),
         _buildIcon(Icons.photo_camera_back, "Device Back", () {
-          _navigateToCameraScreen("Device Back", 'backImagePath');
+          _navigateToCameraScreen("Device Back", 'back');
         }),
         _buildIcon(Icons.camera_alt_rounded, "Left Side Image", () {
-          _navigateToCameraScreen("Left Side Image", 'sideImage1Path');
+          _navigateToCameraScreen("Left Side Image", 'side1');
         }),
         _buildIcon(Icons.camera_alt_rounded, "Right Side Image", () {
-          _navigateToCameraScreen("Right Side Image", 'sideImage2Path');
+          _navigateToCameraScreen("Right Side Image", 'side2');
         }),
       ],
     );
   }
 
   // Navigate to the camera screen
-  void _navigateToCameraScreen(String title, String imagePathKey) {
+  void _navigateToCameraScreen(String title, String imageKey) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -81,31 +79,37 @@ class _ImageCaptureGridState extends State<ImageCaptureGrid> {
           controller: _controller,
           initializeControllerFuture: _initializeControllerFuture,
           onCapture: (imagePath) {
-            // Update the model with the captured image path
+            // Update the image path based on the image key
             setState(() {
-              _modelDetails = _modelDetails.copyWith(
-                frontImagePath: imagePathKey == 'frontImagePath' ? imagePath : _modelDetails.frontImagePath,
-                backImagePath: imagePathKey == 'backImagePath' ? imagePath : _modelDetails.backImagePath,
-                sideImage1Path: imagePathKey == 'sideImage1Path' ? imagePath : _modelDetails.sideImage1Path,
-                sideImage2Path: imagePathKey == 'sideImage2Path' ? imagePath : _modelDetails.sideImage2Path,
-              );
+              if (imageKey == 'front') {
+                frontImagePath = imagePath;
+              } else if (imageKey == 'back') {
+                backImagePath = imagePath;
+              } else if (imageKey == 'side1') {
+                sideImage1Path = imagePath;
+              } else if (imageKey == 'side2') {
+                sideImage2Path = imagePath;
+              }
             });
 
-            // After capturing all the images, add the model to the provider and pass it to the parent
-            _addModelToProvider();
+            // After capturing all images, send them to the parent
+            _sendCapturedImagesToParent();
           },
         ),
       ),
     );
   }
 
-  // Add model to the provider and send the saved model to the parent
-  void _addModelToProvider() async {
-    final modelProvider = Provider.of<ModelDetailsProvider>(context, listen: false);
-    await modelProvider.addModel(_modelDetails);  // Add model to Appwrite and provider
-
-    // Send the model to the parent
-    widget.onModelCaptured(_modelDetails);
+  // Send the captured image paths to the parent widget
+  void _sendCapturedImagesToParent() {
+    // Check if all images are captured
+    if (frontImagePath.isNotEmpty &&
+        backImagePath.isNotEmpty &&
+        sideImage1Path.isNotEmpty &&
+        sideImage2Path.isNotEmpty) {
+      // Send the image paths as separate strings to the parent
+      widget.onImagesCaptured(frontImagePath, backImagePath, sideImage1Path, sideImage2Path);
+    }
   }
 
   // Build grid icon and display captured image in the grid

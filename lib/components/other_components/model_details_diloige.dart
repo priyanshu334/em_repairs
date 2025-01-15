@@ -1,9 +1,7 @@
-import 'package:em_repairs/models/model_details_model.dart';
 import 'package:flutter/material.dart';
 import 'image_capture_grid.dart';
 
-
-void showModelDetailsDialog(BuildContext context, Function(ModelDetailsModel) onModelCaptured) {
+void showModelDetailsDialog(BuildContext context, Function(String, String, String, String) onImagesCaptured) {
   showDialog(
     context: context,
     builder: (context) {
@@ -32,15 +30,15 @@ void showModelDetailsDialog(BuildContext context, Function(ModelDetailsModel) on
                 ],
               ),
               const SizedBox(height: 16),
-              // Pass the callback function to handle the captured model ID
+              // Pass the callback function to handle the captured image paths
               ImageCaptureGrid(
-                onModelCaptured: (modelDetails) {
-                  // Call the callback passed from the parent
-                  onModelCaptured(modelDetails);
+                onImagesCaptured: (frontImagePath, backImagePath, sideImage1Path, sideImage2Path) {
+                  // Call the callback passed from the parent with the captured image paths
+                  onImagesCaptured(frontImagePath, backImagePath, sideImage1Path, sideImage2Path);
 
-                  // Show a Snackbar with the captured model ID or details
+                  // Show a Snackbar with the captured image paths or details
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Captured Model ID: ${modelDetails.id}')),
+                    SnackBar(content: Text('Captured Images:\nFront: $frontImagePath\nBack: $backImagePath')),
                   );
                   Navigator.pop(context); // Close the dialog after capturing the model
                 },

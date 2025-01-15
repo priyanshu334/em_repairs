@@ -3,7 +3,8 @@ import 'package:em_repairs/locator.dart';
 import 'package:em_repairs/provider/accesories_provider.dart';
 import 'package:em_repairs/provider/bar_code_provider.dart';
 import 'package:em_repairs/provider/customer_provider.dart';
-import 'package:em_repairs/provider/device_kyc_provider.dart';
+
+import 'package:em_repairs/provider/device_kycs_provider.dart';
 import 'package:em_repairs/provider/estimate_provider.dart';
 import 'package:em_repairs/provider/lock_code_provider.dart';
 import 'package:em_repairs/provider/model_provider.dart';

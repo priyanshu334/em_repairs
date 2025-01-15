@@ -33,9 +33,14 @@ class _OrderPageState extends State<OrderPage> {
     try {
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
       await orderProvider.listOrders(); // Fetch all orders
-
     } catch (e) {
       debugPrint('Error loading orders: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading orders: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
       setState(() {
         isLoading = false;
@@ -135,13 +140,12 @@ class _OrderPageState extends State<OrderPage> {
                       itemCount: orders.length,
                       itemBuilder: (context, index) {
                         final order = orders[index];
-                        debugPrint("Order ID: ${order.id}");
 
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
                           child: ListTile(
                             title: Text(
-                              order.customer.name ?? "Loading...",
+                              order.customer?.name ?? "Loading...",
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
@@ -149,13 +153,13 @@ class _OrderPageState extends State<OrderPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                    "Model: ${order.orderDetailsModel.deviceModel ?? 'Loading...'}"),
+                                    "Model: ${order.orderDetailsModel?.deviceModel ?? 'Loading...'}"),
                                 Text(
-                                    "Status: ${order.orderDetailsModel.orderStatus ?? 'Pending'}"),
+                                    "Status: ${order.orderDetailsModel?.orderStatus ?? 'Pending'}"),
                                 Text(
-                                    "Customer Number: ${order.customer.phone ?? 'Loading'}"),
+                                    "Customer Number: ${order.customer?.phone ?? 'Loading'}"),
                                 Text(
-                                    "Due Date: ${order.estimate.pickupDate ?? 'Loading'}"),
+                                    "Due Date: ${order.estimate?.pickupDate ?? 'Loading'}"),
                                 Text(
                                     "Date: ${DateTime.now().toLocal().toString().split(' ')[0]}"),
                               ],
@@ -173,9 +177,10 @@ class _OrderPageState extends State<OrderPage> {
                                         builder: (context) => EditPage(
                                           orderId: order.id!,
                                           receiverId: order.receiverDetails.id,
-                                          deviceId: order.orderDetailsModel.id,
-                                          estimateId: order.estimate.id,
-                                          repairPartnerId: order.repairPartnerDetails.id,
+                                          deviceId: order.orderDetailsModel?.id,
+                                          estimateId: order.estimate?.id,
+                                          repairPartnerId:
+                                              order.repairPartnerDetails.id,
                                         ),
                                       ),
                                     );

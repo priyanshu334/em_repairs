@@ -1,146 +1,162 @@
-import 'package:em_repairs/models/accessories_model.dart';
-import 'package:em_repairs/models/model_details_model.dart';
-import 'package:em_repairs/provider/device_kyc_provider.dart';
+import 'package:em_repairs/models/DeviceKycModels.dart';
+import 'package:em_repairs/provider/device_kycs_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:em_repairs/models/accessories_model.dart';
 import 'package:em_repairs/components/Accessories_form.dart';
 import 'package:em_repairs/components/other_components/bar_code_scan_componet.dart';
 import 'package:em_repairs/components/other_components/lock_code.dart';
 import 'package:em_repairs/components/other_components/model_details.dart';
-import 'package:em_repairs/models/device_kyc_model.dart';
-import 'package:em_repairs/models/bar_code_model.dart';
-import 'package:em_repairs/models/lock_code_model.dart';
 import 'package:provider/provider.dart';
 
 class DeviceKycForm extends StatefulWidget {
-  final Function(DeviceKycModel)? onDeviceKycSaved;
+  final Function(DeviceKycModels) onKycSaved; // Callback to parent widget
 
-  const DeviceKycForm({Key? key, this.onDeviceKycSaved}) : super(key: key);
+  const DeviceKycForm({Key? key, required this.onKycSaved}) : super(key: key);
 
   @override
   _DeviceKycFormState createState() => _DeviceKycFormState();
 }
 
 class _DeviceKycFormState extends State<DeviceKycForm> {
-  ModelDetailsModel? modelDetails;
-  LockCodeModel? lockCode;
-  BarcodeModel? barcode;
+  String? frontImagePath;
+  String? backImagePath;
+  String? sideImage1Path;
+  String? sideImage2Path;
+  List<int>? lockCode;
+  String? patternCode;
+  String? barcode;
   AccessoriesModel? accessory;
 
-  // Handle captured model details
-  void _handleModelCaptured(ModelDetailsModel model) {
+  // Handle Model Images
+  void _handleModelImagesCaptured(String front, String back, String side1, String side2) {
     setState(() {
-      modelDetails = model;
+      frontImagePath = front;
+      backImagePath = back;
+      sideImage1Path = side1;
+      sideImage2Path = side2;
     });
-    debugPrint("Captured Model: ${model.id}");
   }
 
-  // Handle lock code generation
-  void _handleLockCodeGenerated(LockCodeModel lockCode) {
+  // Handle Lock Code
+  void _handleLockCodeGenerated(List<int> code, String? pattern) {
     setState(() {
-      this.lockCode = lockCode;
+      lockCode = code;
+      patternCode = pattern;
     });
-    debugPrint("Generated Lock Code: ${lockCode.id}");
   }
 
-  // Handle barcode scan
-  void _handleBarcodeScan(BarcodeModel scannedBarcode) {
+  // Handle Barcode Scan
+  void _handleBarcodeScan(String scannedBarcode) {
     setState(() {
       barcode = scannedBarcode;
     });
-    debugPrint("Scanned Barcode: ${scannedBarcode.barcode}");
   }
 
-  // Handle accessories submitted
+  // Handle Accessories
   void _handleAccessoriesSubmitted(AccessoriesModel accessoryModel) {
     setState(() {
       accessory = accessoryModel;
     });
-    debugPrint("Selected Accessory: ${accessoryModel.id}");
   }
 
-  // Handle form submission using the provider to save DeviceKycModel
+  // Form Submission
   void _handleFormSubmit() {
-    if (modelDetails != null && lockCode != null && barcode != null && accessory != null) {
-      final deviceKycModel = DeviceKycModel(
-        deviceId: '', // Don't generate UUID, it will be handled by provider
-        modelDetailsModel: modelDetails!,
-        lockCodeModel: lockCode!,
-        barcodeModel: barcode!,
-        accessoriesModel: accessory!,
-      );
+    final deviceKycModel = DeviceKycModels(
+      frontImagePath: frontImagePath,
+      backImagePath: backImagePath,
+      sideImage1Path: sideImage1Path,
+      sideImage2Path: sideImage2Path,
+      lockCode: lockCode,
+      patternCode: patternCode,
+      barcode: barcode,
+      accessoriesModel: accessory,
+    );
 
-      // Save device KYC using the provider
-      final deviceKycProvider = Provider.of<DeviceKycProvider>(context, listen: false);
-      deviceKycProvider.saveDeviceKyc(deviceKycModel);
+    final provider = Provider.of<DeviceKycProvider>(context, listen: false);
 
-      // Notify the parent that the KYC is saved
-      if (widget.onDeviceKycSaved != null) {
-        widget.onDeviceKycSaved!(deviceKycModel);
-      }
+    provider.saveDeviceKyc(deviceKycModel).then((_) {
+      // After saving to the provider, call the parent callback with the model
+      widget.onKycSaved(deviceKycModel);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Device KYC saved successfully')),
       );
-    } else {
+    }).catchError((error) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all the details')),
+        SnackBar(content: Text('Error: ${error.toString()}')),
       );
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  "Device KYC",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueAccent,
-                  ),
+    final provider = Provider.of<DeviceKycProvider>(context);
+
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 16.0),
+                      child: Text(
+                        "Device KYC Form",
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
+                    ),
+                    ModelDetails(onImagesCaptured: _handleModelImagesCaptured),
+                    LockCode(onGeneratedId: _handleLockCodeGenerated),
+                    BarCodeScannerComponent(onScan: _handleBarcodeScan),
+                    AccessoriesForm(onSubmit: _handleAccessoriesSubmitted),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: ElevatedButton(
+                        onPressed: provider.isLoading ? null : _handleFormSubmit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal.shade600,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 28),
+                        ),
+                        child: provider.isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                "Save KYC",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
-              ModelDetails(onModelCaptured: _handleModelCaptured),
-              LockCode(onGeneratedId: _handleLockCodeGenerated),
-              BarCodeScannerComponent(onScan: _handleBarcodeScan),
-              AccessoriesForm(onSubmit: _handleAccessoriesSubmitted),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: _handleFormSubmit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal.shade600,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 28),
-                  ),
-                  child: const Text(
-                    "Save Device KYC",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
-      ),
+        if (provider.isLoading)
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+      ],
     );
   }
 }

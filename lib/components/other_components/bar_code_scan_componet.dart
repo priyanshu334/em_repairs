@@ -1,18 +1,13 @@
 import 'package:em_repairs/components/other_components/bar_code_scan_page.dart';
-import 'package:em_repairs/models/bar_code_model.dart';
-import 'package:em_repairs/provider/bar_code_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 class BarCodeScannerComponent extends StatelessWidget {
-  final Function(BarcodeModel) onScan; // Callback to send the full BarcodeModel to the parent
+  final Function(String scannedBarcode) onScan; // Callback to send the scanned barcode string to the parent
 
   const BarCodeScannerComponent({super.key, required this.onScan});
 
   @override
   Widget build(BuildContext context) {
-    final barcodeProvider = Provider.of<BarcodeProvider>(context, listen: false);
-
     return SizedBox(
       width: double.infinity, // Full-width button
       child: ElevatedButton.icon(
@@ -24,20 +19,8 @@ class BarCodeScannerComponent extends StatelessWidget {
               builder: (context) => BarcodeScannerPage(
                 onScan: (scannedBarcode) async {
                   if (scannedBarcode.isNotEmpty) {
-                    // Create the barcode model without generating an ID manually
-                    BarcodeModel barcodeModel = BarcodeModel(
-                      id: '', // Appwrite will generate the ID
-                      barcode: scannedBarcode,
-                    );
-
-                    // Save the barcode using the provider (Appwrite will generate the unique ID)
-                    await barcodeProvider.addBarcode(barcodeModel);
-
-                    // Get the saved barcode model (last item in the list)
-                    final BarcodeModel savedBarcode = barcodeProvider.barcodes.last;
-
-                    // Pass the full saved model to the parent
-                    onScan(savedBarcode);
+                    // Pass the scanned barcode string to the parent
+                    onScan(scannedBarcode);
 
                     // Close the barcode scanner page
                     Navigator.pop(context);

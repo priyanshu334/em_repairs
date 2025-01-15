@@ -21,6 +21,7 @@ class CameraScreen extends StatelessWidget {
   }) : super(key: key);
 
   @override
+
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,

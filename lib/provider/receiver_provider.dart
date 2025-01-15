@@ -45,7 +45,7 @@ class ReceiverDetailsProvider extends ChangeNotifier {
       final response = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: receiver.id ?? 'unique()', // Let Appwrite generate an ID
+        documentId: ID.unique(), // Let Appwrite generate an ID
         data: {
           'name': receiver.name,
           'isOwner': receiver.isOwner,
@@ -54,7 +54,7 @@ class ReceiverDetailsProvider extends ChangeNotifier {
       );
 
       // Add the receiver to the list
-      _receivers.add(ReceiverDetailsModel.fromMap(response.data)); // No `response.$id`
+      _receivers.add(ReceiverDetailsModel.fromMap(response.data,documentId: response.$id)); // No `response.$id`
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding receiver details: $e');

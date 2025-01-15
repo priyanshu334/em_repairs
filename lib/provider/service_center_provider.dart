@@ -51,7 +51,7 @@ class ServiceCenterProvider extends ChangeNotifier {
       );
 
       // Add the newly created service center with the generated ID
-      _serviceCenters.add(ServiceCenterModel.fromMap(response.data));
+      _serviceCenters.add(ServiceCenterModel.fromMap(response.data,documentId: response.$id));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding service center: $e');

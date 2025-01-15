@@ -52,7 +52,7 @@ class ModelDetailsProvider extends ChangeNotifier {
       );
 
       // If the model's ID was null, update it with the generated ID
-      final newModel = ModelDetailsModel.fromMap(response.data);
+      final newModel = ModelDetailsModel.fromMap(response.data,documentId: response.$id);
       _models.add(newModel); // Add the new model with the generated ID
       notifyListeners();
     } catch (e) {

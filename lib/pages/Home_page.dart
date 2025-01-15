@@ -32,7 +32,15 @@ class _OrderPageState extends State<OrderPage> {
 
     try {
       final orderProvider = Provider.of<OrderProvider>(context, listen: false);
-      await orderProvider.listOrders(); // Fetch all orders
+      debugPrint('Fetching orders from provider...');
+      await orderProvider.listOrders(); // Fetch all orders asynchronously
+
+      // Debugging fetched orders
+      debugPrint('Fetched Orders: ${orderProvider.orderList}');
+    
+      if (orderProvider.orderList.isEmpty) {
+        debugPrint('No orders found!');
+      }
     } catch (e) {
       debugPrint('Error loading orders: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -70,13 +78,14 @@ class _OrderPageState extends State<OrderPage> {
     if (confirm) {
       try {
         final orderProvider = Provider.of<OrderProvider>(context, listen: false);
-        await orderProvider.deleteOrder(orderId);
+        await orderProvider.deleteOrder(orderId); // Delete order asynchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Order deleted successfully!"),
             backgroundColor: Colors.green,
           ),
         );
+        _loadOrders(); // Reload the orders after deletion
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -92,6 +101,9 @@ class _OrderPageState extends State<OrderPage> {
   Widget build(BuildContext context) {
     final orderProvider = Provider.of<OrderProvider>(context);
     final orders = orderProvider.orderList;
+
+    // Debugging: Check if orders are null or empty
+    debugPrint('Order list in build method: $orders');
 
     return Scaffold(
       appBar: CustomAppBar(
@@ -125,15 +137,24 @@ class _OrderPageState extends State<OrderPage> {
                   ),
                   if (showFilters)
                     FiltersSection(
-                      onCustomerNameChanged: (value) =>
-                          debugPrint('Customer name: $value'),
-                      onOperatorChanged: (value) =>
-                          debugPrint('Operator: $value'),
-                      onOrderChanged: (value) => debugPrint('Order: $value'),
-                      onLocationChanged: (value) =>
-                          debugPrint('Location: $value'),
-                      onTodayPressed: () => debugPrint('Today pressed'),
-                      onSearchPressed: () => debugPrint('Search pressed'),
+                      onCustomerNameChanged: (value) async {
+                        debugPrint('Customer name: $value');
+                      },
+                      onOperatorChanged: (value) async {
+                        debugPrint('Operator: $value');
+                      },
+                      onOrderChanged: (value) async {
+                        debugPrint('Order: $value');
+                      },
+                      onLocationChanged: (value) async {
+                        debugPrint('Location: $value');
+                      },
+                      onTodayPressed: () async {
+                        debugPrint('Today pressed');
+                      },
+                      onSearchPressed: () async {
+                        debugPrint('Search pressed');
+                      },
                     ),
                   Expanded(
                     child: ListView.builder(
@@ -141,27 +162,40 @@ class _OrderPageState extends State<OrderPage> {
                       itemBuilder: (context, index) {
                         final order = orders[index];
 
+                        // Debugging: Print order data at this index
+                        debugPrint('Order at index $index: $order');
+
+                        // Access fields within optional maps
+                        final customerName =
+                            order.customerModel?['name'] ?? 'Not Available';
+                          
+                        final orderStatus =
+
+                            order.orderDetailsModel?['orderStatus'] ??
+                                'Not Available';
+                        final model =
+                            order.orderDetailsModel?['deviceModel'] ?? 'Not Available';
+                        final customerPhone =
+                            order.customerModel?['phone'] ?? 'Not Available';
+                        final dueDate =
+                            order.estimateModel?['pickupDate'] ?? 'Not Available';
+
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
                           child: ListTile(
                             title: Text(
-                              order.customer?.name ?? "Loading...",
+                              customerName,
                               style:
                                   const TextStyle(fontWeight: FontWeight.bold),
                             ),
                             subtitle: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                    "Model: ${order.orderDetailsModel?.deviceModel ?? 'Loading...'}"),
-                                Text(
-                                    "Status: ${order.orderDetailsModel?.orderStatus ?? 'Pending'}"),
-                                Text(
-                                    "Customer Number: ${order.customer?.phone ?? 'Loading'}"),
-                                Text(
-                                    "Due Date: ${order.estimate?.pickupDate ?? 'Loading'}"),
-                                Text(
-                                    "Date: ${DateTime.now().toLocal().toString().split(' ')[0]}"),
+                                Text("Model: $model"),
+                                Text("Status: $orderStatus"),
+                                Text("model:$model"),
+                                Text("Customer Number: $customerPhone"),
+                                Text("Due Date: $dueDate"),
                               ],
                             ),
                             trailing: Row(
@@ -171,16 +205,19 @@ class _OrderPageState extends State<OrderPage> {
                                   icon: const Icon(Icons.edit,
                                       color: Colors.blue),
                                   onPressed: () {
+                                    debugPrint(
+                                        'Navigating to edit page for order ID: ${order.id}');
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => EditPage(
                                           orderId: order.id!,
-                                          receiverId: order.receiverDetails.id,
-                                          deviceId: order.orderDetailsModel?.id,
-                                          estimateId: order.estimate?.id,
+                                          receiverId:
+                                              order.receiverDetailsModel?['id'],
+                                          estimateId:
+                                              order.estimateModel?['id'],
                                           repairPartnerId:
-                                              order.repairPartnerDetails.id,
+                                              order.repairPartnerDetailsModel?['id'],
                                         ),
                                       ),
                                     );

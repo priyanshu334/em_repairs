@@ -1,6 +1,6 @@
 import 'package:em_repairs/models/DeviceKycModels.dart';
 import 'package:em_repairs/models/customer_model.dart';
-import 'package:em_repairs/models/device_kyc_model.dart';
+
 import 'package:em_repairs/models/order_details_models.dart';
 import 'package:em_repairs/models/receiver_model.dart';
 import 'package:em_repairs/models/repair_partner_detail.dart';
@@ -9,33 +9,32 @@ import 'package:flutter/material.dart';
 
 class OrderModel {
   final String? id; // Make 'id' nullable
-  final ReceiverDetailsModel receiverDetails;
-  final CustomerModel customer;
-  final OrderDetailsModel orderDetailsModel;
-  final EstimateModel estimate;
-  final DeviceKycModels? deviceKyc; // Make deviceKyc nullable
-  final RepairPartnerDetailsModel repairPartnerDetails;
+  final Map<String, dynamic>? receiverDetailsModel; // Change to Map<String, dynamic>?
+  final Map<String, dynamic>? customerModel; // Change to Map<String, dynamic>?
+  final Map<String, dynamic>? orderDetailsModel; // Change to Map<String, dynamic>?
+  final Map<String, dynamic>? estimateModel; // Change to Map<String, dynamic>?
+  final Map<String, dynamic>? deviceKycModels; // Change to Map<String, dynamic>?
+  final Map<String, dynamic>? repairPartnerDetailsModel; // Change to Map<String, dynamic>?
 
   OrderModel({
     this.id, // 'id' is now optional
-    required this.receiverDetails,
-    required this.customer,
-    required this.orderDetailsModel,
-    required this.estimate,
-    this.deviceKyc, // Nullable DeviceKycModels
-    required this.repairPartnerDetails,
+    this.receiverDetailsModel, // Nullable Map<String, dynamic>
+    this.customerModel, // Nullable Map<String, dynamic>
+    this.orderDetailsModel, // Nullable Map<String, dynamic>
+    this.estimateModel, // Nullable Map<String, dynamic>
+    this.deviceKycModels, // Nullable Map<String, dynamic>
+    this.repairPartnerDetailsModel, // Nullable Map<String, dynamic>
   });
 
   // Convert the model to a map (for Appwrite database operations)
   Map<String, dynamic> toMap() {
     return {
-     
-      'receiverDetails': receiverDetails.toMap(),
-      'customer': customer.toMap(),
-      'orderDetailsModel': orderDetailsModel.toMap(),
-      'estimate': estimate.toMap(),
-      'deviceKyc': deviceKyc?.toMap(), // Handle nullable values
-      'repairPartnerDetails': repairPartnerDetails.toMap(),
+      'receiverDetailsModel': receiverDetailsModel,
+      'customerModel': customerModel,
+      'orderDetailsModel': orderDetailsModel,
+      'estimateModel': estimateModel,
+      'deviceKycModels': deviceKycModels,
+      'repairPartnerDetailsModel': repairPartnerDetailsModel,
     };
   }
 
@@ -43,38 +42,38 @@ class OrderModel {
   factory OrderModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
     return OrderModel(
       id: documentId, // 'id' is now optional and can be null
-      receiverDetails: ReceiverDetailsModel.fromMap(map['receiverDetails']),
-      customer: CustomerModel.fromMap(map['customer']),
-      orderDetailsModel: OrderDetailsModel.fromMap(map['orderDetailsModel']),
-      estimate: EstimateModel.fromMap(map['estimate']),
-      deviceKyc: map['deviceKyc'] != null ? DeviceKycModels.fromMap(map['deviceKyc']) : null, // Handle nullable deviceKyc
-      repairPartnerDetails: RepairPartnerDetailsModel.fromMap(map['repairPartnerDetails']),
+      receiverDetailsModel: map['receiverDetailsModel'],
+      customerModel: map['customerModel'],
+      orderDetailsModel: map['orderDetailsModel'],
+      estimateModel: map['estimateModel'],
+      deviceKycModels: map['deviceKycModels'],
+      repairPartnerDetailsModel: map['repairPartnerDetailsModel'],
     );
   }
 
   @override
   String toString() {
-    return 'OrderModel(id: $id, receiverDetails: $receiverDetails, customer: $customer, orderDetailsModel: $orderDetailsModel, estimate: $estimate, deviceKyc: $deviceKyc, repairPartnerDetails: $repairPartnerDetails)';
+    return 'OrderModel(id: $id, receiverDetails: $receiverDetailsModel, customer: $customerModel, orderDetailsModel: $orderDetailsModel, estimate: $estimateModel, deviceKyc: $deviceKycModels, repairPartnerDetails: $repairPartnerDetailsModel)';
   }
 
   // CopyWith method for easier updates
   OrderModel copyWith({
     String? id,
-    ReceiverDetailsModel? receiverDetails,
-    CustomerModel? customer,
-    OrderDetailsModel? orderDetailsModel,
-    EstimateModel? estimate,
-    DeviceKycModels? deviceKyc, // Nullable deviceKyc
-    RepairPartnerDetailsModel? repairPartnerDetails,
+    Map<String, dynamic>? receiverDetails,
+    Map<String, dynamic>? customer,
+    Map<String, dynamic>? orderDetailsModel,
+    Map<String, dynamic>? estimate,
+    Map<String, dynamic>? deviceKyc,
+    Map<String, dynamic>? repairPartnerDetails,
   }) {
     return OrderModel(
       id: id ?? this.id,
-      receiverDetails: receiverDetails ?? this.receiverDetails,
-      customer: customer ?? this.customer,
+      receiverDetailsModel: receiverDetails ?? this.receiverDetailsModel,
+      customerModel: customer ?? this.customerModel,
       orderDetailsModel: orderDetailsModel ?? this.orderDetailsModel,
-      estimate: estimate ?? this.estimate,
-      deviceKyc: deviceKyc ?? this.deviceKyc, // Handle nullable deviceKyc
-      repairPartnerDetails: repairPartnerDetails ?? this.repairPartnerDetails,
+      estimateModel: estimate ?? this.estimateModel,
+      deviceKycModels: deviceKyc ?? this.deviceKycModels,
+      repairPartnerDetailsModel: repairPartnerDetails ?? this.repairPartnerDetailsModel,
     );
   }
 }

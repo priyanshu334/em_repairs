@@ -9,7 +9,7 @@ class OrderProvider with ChangeNotifier {
 
   // Database and Collection IDs
   final String _databaseId = '678690d10024689b7151'; // Replace with your actual database ID
-  final String _collectionId = '6786d54e00328c269e9a'; // Replace with your actual collection ID
+  final String _collectionId = '6787938d0029b60ce7b9'; // Replace with your actual collection ID
 
   OrderProvider(this._appwriteService) {
     _databases = Databases(_appwriteService.client);
@@ -28,8 +28,7 @@ class OrderProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final documentId = model.id ?? ''; // Empty string means Appwrite will generate the ID
-
+ 
       final response = await _databases.createDocument(
         databaseId: _databaseId,
         collectionId: _collectionId,

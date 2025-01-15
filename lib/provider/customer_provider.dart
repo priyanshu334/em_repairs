@@ -51,7 +51,7 @@ class CustomerProvider extends ChangeNotifier {
       );
 
       // Fetch the document and update the list
-      final addedCustomer = CustomerModel.fromMap(response.data); // Removed documentId
+      final addedCustomer = CustomerModel.fromMap(response.data,documentId: response.$id); // Removed documentId
       _customers.add(addedCustomer);
       notifyListeners();
       debugPrint('Customer added: ${customer.name}');

@@ -1,15 +1,15 @@
-import 'package:em_repairs/models/accessories_model.dart';
+import 'package:flutter/material.dart';
 
 class DeviceKycModels {
-  final String? id; // Nullable 'id' for document ID
-  final String? frontImagePath; 
-  final String? backImagePath; 
-  final String? sideImage1Path; 
-  final String? sideImage2Path; 
-  final List<int>? lockCode; 
-  final String? patternCode; 
-  final String? barcode; 
-  final AccessoriesModel? accessoriesModel; 
+  final String? id; // Make 'id' nullable
+  final String? frontImagePath;
+  final String? backImagePath;
+  final String? sideImage1Path;
+  final String? sideImage2Path;
+  final List<int>? lockCode;
+  final String? patternCode;
+  final String? barcode;
+  final Map<String, dynamic>? accessoriesModel; // Changed to Map for Appwrite
 
   DeviceKycModels({
     this.id, // Nullable 'id'
@@ -23,7 +23,7 @@ class DeviceKycModels {
     this.accessoriesModel,
   });
 
-  // Convert the model to a map
+  // Convert the model to a map (for Appwrite Database operations)
   Map<String, dynamic> toMap() {
     return {
       'frontImagePath': frontImagePath,
@@ -33,32 +33,31 @@ class DeviceKycModels {
       'lockCode': lockCode,
       'patternCode': patternCode,
       'barcode': barcode,
-      'accessories': accessoriesModel?.toMap(),
+      'accessoriesModel': accessoriesModel, // Store it as a Map or JSON
     };
   }
 
-  // Create a model from a map (useful for parsing response)
+  // Create a model from a map (useful for parsing Appwrite's response)
   factory DeviceKycModels.fromMap(Map<String, dynamic> map, {String? documentId}) {
     return DeviceKycModels(
-      id: documentId, // Use document ID from the response
+      id: documentId, // Use the document ID from Appwrite response (nullable)
       frontImagePath: map['frontImagePath'],
       backImagePath: map['backImagePath'],
       sideImage1Path: map['sideImage1Path'],
       sideImage2Path: map['sideImage2Path'],
-      lockCode: map['lockCode'] != null ? List<int>.from(map['lockCode']) : null,
+      lockCode: map['lockCode']?.cast<int>(),
       patternCode: map['patternCode'],
       barcode: map['barcode'],
-      accessoriesModel: map['accessories'] != null
-          ? AccessoriesModel.fromMap(map['accessories'])
-          : null,
+      accessoriesModel: map['accessoriesModel'],
     );
   }
 
   @override
   String toString() {
     return 'DeviceKycModel(id: $id, frontImagePath: $frontImagePath, backImagePath: $backImagePath, '
-        'sideImage1Path: $sideImage1Path, sideImage2Path: $sideImage2Path, lockCode: $lockCode, '
-        'patternCode: $patternCode, barcode: $barcode, accessoriesModel: $accessoriesModel)';
+        'sideImage1Path: $sideImage1Path, sideImage2Path: $sideImage2Path, '
+        'lockCode: $lockCode, patternCode: $patternCode, barcode: $barcode, '
+        'accessoriesModel: $accessoriesModel)';
   }
 
   // CopyWith method for easier updates
@@ -71,7 +70,7 @@ class DeviceKycModels {
     List<int>? lockCode,
     String? patternCode,
     String? barcode,
-    AccessoriesModel? accessoriesModel,
+    Map<String, dynamic>? accessoriesModel,
   }) {
     return DeviceKycModels(
       id: id ?? this.id,

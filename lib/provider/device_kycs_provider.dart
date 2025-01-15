@@ -2,7 +2,6 @@ import 'package:em_repairs/models/DeviceKycModels.dart';
 import 'package:em_repairs/services/apwrite_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:appwrite/appwrite.dart';
- // Import DeviceKycModels
 
 class DeviceKycProvider with ChangeNotifier {
   final AppwriteService _appwriteService;
@@ -24,30 +23,30 @@ class DeviceKycProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // Save DeviceKycModels Data to Appwrite
- Future<void> saveDeviceKyc(DeviceKycModels model) async {
-  _isLoading = true;
-  notifyListeners();
-
-  try {
-    final response = await _databases.createDocument(
-      databaseId: _databaseId,
-      collectionId: _collectionId,
-      documentId: ID.unique(), // Appwrite generates a unique ID
-      data: model.toMap(),
-    );
-
-    // Remove the unnecessary `?? {}`
-    final savedDeviceKyc = DeviceKycModels.fromMap(response.data, documentId: response.$id);
-    _deviceKycList.add(savedDeviceKyc);
+  Future<void> saveDeviceKyc(DeviceKycModels model) async {
+    _isLoading = true;
     notifyListeners();
-  } catch (e) {
-    debugPrint('Error saving device KYC: $e');
-    throw Exception('Failed to save device KYC data.');
-  } finally {
-    _isLoading = false;
-    notifyListeners();
+
+    try {
+      final response = await _databases.createDocument(
+        databaseId: _databaseId,
+        collectionId: _collectionId,
+        documentId: ID.unique(), // Appwrite generates a unique ID
+        data: model.toMap(),
+      );
+
+      // Remove the unnecessary `?? {}`
+      final savedDeviceKyc = DeviceKycModels.fromMap(response.data, documentId: response.$id);
+      _deviceKycList.add(savedDeviceKyc);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving device KYC: $e');
+      throw Exception('Failed to save device KYC data.');
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
-}
 
   // Retrieve a single DeviceKycModels by Document ID
   Future<DeviceKycModels> getDeviceKyc(String documentId) async {
@@ -57,7 +56,7 @@ class DeviceKycProvider with ChangeNotifier {
         collectionId: _collectionId,
         documentId: documentId,
       );
-      return DeviceKycModels.fromMap(response.data , documentId: response.$id);
+      return DeviceKycModels.fromMap(response.data, documentId: response.$id);
     } catch (e) {
       debugPrint('Error fetching device KYC: $e');
       throw Exception('Failed to fetch device KYC data.');
@@ -76,7 +75,7 @@ class DeviceKycProvider with ChangeNotifier {
       );
 
       _deviceKycList = result.documents.map((doc) {
-        return DeviceKycModels.fromMap(doc.data , documentId: doc.$id);
+        return DeviceKycModels.fromMap(doc.data, documentId: doc.$id);
       }).toList();
 
       notifyListeners();

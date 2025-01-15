@@ -56,6 +56,7 @@ class ServiceProviderProvider extends ChangeNotifier {
       // Add the newly created service provider with the ID returned by Appwrite
       _serviceProviders.add(ServiceProviderModel.fromMap(
         response.data,
+        documentId: response.$id
          // Use the response's $id as the ID
       ));
       notifyListeners();

@@ -50,7 +50,7 @@ class OrderDetailsProvider extends ChangeNotifier {
       );
 
       // Create the order model using the generated ID
-      _orders.add(OrderDetailsModel.fromMap(response.data));
+      _orders.add(OrderDetailsModel.fromMap(response.data,documentId: response.$id));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding order: $e');

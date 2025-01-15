@@ -14,7 +14,7 @@ class ReceiverDetailsModel {
   // Convert the model to a map (for Appwrite Database operations)
   Map<String, dynamic> toMap() {
     return {
-      'id': id, // Include 'id' in the map, even if null
+    
       'name': name,
       'isOwner': isOwner,
       'isStaff': isStaff,

@@ -55,7 +55,7 @@ class BarcodeProvider with ChangeNotifier {
         data: barcode.toMap(),
       );
 
-      final newBarcode = BarcodeModel.fromMap(response.data,);
+      final newBarcode = BarcodeModel.fromMap(response.data,documentId: response.$id);
       _barcodes.add(newBarcode);
       notifyListeners();
     } catch (e) {

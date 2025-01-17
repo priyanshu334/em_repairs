@@ -7,6 +7,7 @@
   import 'package:em_repairs/provider/repair_partner_provider.dart';
   import 'package:em_repairs/provider/service_center_provider.dart';
   import 'package:em_repairs/provider/service_provider.dart';
+import 'package:uuid/uuid.dart';
 
   class RepairPartnerDetail extends StatefulWidget {
     final Function(RepairPartnerDetailsModel details) onDetailsChanged;
@@ -193,6 +194,7 @@
 
                     try {
                       final details = RepairPartnerDetailsModel(
+                         id: const Uuid().v4(),
                         isInHouse: isInHouse,
                         isServiceCenter: isServiceCenter,
                         selectedServiceCenter: selectedServiceCenter,

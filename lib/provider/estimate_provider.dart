@@ -70,7 +70,7 @@ class EstimateProvider extends ChangeNotifier {
       await databases.updateDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: estimate.id!, // Pass the 'id' directly, assuming it's not null
+        documentId: estimate.id, // Pass the 'id' directly, assuming it's not null
         data: estimate.toMap(),
       );
 
@@ -91,7 +91,7 @@ class EstimateProvider extends ChangeNotifier {
       await databases.deleteDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: estimate.id!,
+        documentId: estimate.id,
       );
 
       _estimates.remove(estimate);

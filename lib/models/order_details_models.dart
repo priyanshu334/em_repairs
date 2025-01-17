@@ -6,13 +6,13 @@ enum OrderStatus {
 }
 
 class OrderDetailsModel {
-  final String? id; // Nullable 'id'
+  final String id; // 'id' is now required and non-nullable
   final String deviceModel;
   final OrderStatus orderStatus;
   final List<String> problems;
 
   OrderDetailsModel({
-    this.id, // Now 'id' is optional
+    required this.id, // 'id' is now required
     required this.deviceModel,
     required this.orderStatus,
     required this.problems,
@@ -21,6 +21,7 @@ class OrderDetailsModel {
   // Convert the model to a map (for Appwrite Database operations)
   Map<String, dynamic> toMap() {
     return {
+      'id': id, // Include 'id' in the map
       'deviceModel': deviceModel,
       'orderStatus': orderStatus.name, // Convert enum to its name
       'problems': problems,
@@ -28,9 +29,9 @@ class OrderDetailsModel {
   }
 
   // Create a model from a map (useful for parsing Appwrite's response)
-  factory OrderDetailsModel.fromMap(Map<String, dynamic> map, {String? documentId}) {
+  factory OrderDetailsModel.fromMap(Map<String, dynamic> map, {required String documentId}) {
     return OrderDetailsModel(
-      id: documentId, // Use documentId from the response (nullable)
+      id: documentId, // 'id' is now required
       deviceModel: map['deviceModel'] ?? '',
       orderStatus: OrderStatus.values.firstWhere(
         (e) => e.name == map['orderStatus'],

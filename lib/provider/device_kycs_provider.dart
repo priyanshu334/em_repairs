@@ -35,8 +35,11 @@ class DeviceKycProvider with ChangeNotifier {
         data: model.toMap(),
       );
 
-      // Remove the unnecessary `?? {}`
-      final savedDeviceKyc = DeviceKycModels.fromMap(response.data, documentId: response.$id);
+      final savedDeviceKyc = DeviceKycModels.fromMap({
+        ...response.data,
+        'id': response.$id, // Explicitly include 'id' from Appwrite's document ID
+      });
+
       _deviceKycList.add(savedDeviceKyc);
       notifyListeners();
     } catch (e) {
@@ -56,7 +59,11 @@ class DeviceKycProvider with ChangeNotifier {
         collectionId: _collectionId,
         documentId: documentId,
       );
-      return DeviceKycModels.fromMap(response.data, documentId: response.$id);
+
+      return DeviceKycModels.fromMap({
+        ...response.data,
+        'id': response.$id, // Include the 'id' explicitly
+      });
     } catch (e) {
       debugPrint('Error fetching device KYC: $e');
       throw Exception('Failed to fetch device KYC data.');
@@ -75,7 +82,10 @@ class DeviceKycProvider with ChangeNotifier {
       );
 
       _deviceKycList = result.documents.map((doc) {
-        return DeviceKycModels.fromMap(doc.data, documentId: doc.$id);
+        return DeviceKycModels.fromMap({
+          ...doc.data,
+          'id': doc.$id, // Include the 'id' explicitly
+        });
       }).toList();
 
       notifyListeners();
@@ -89,29 +99,26 @@ class DeviceKycProvider with ChangeNotifier {
   }
 
   // Update DeviceKycModels Data
-  Future<void> updateDeviceKyc(String documentId, DeviceKycModels model) async {
-    _isLoading = true;
-    notifyListeners();
-
+  Future<void> updateDeviceKyc(DeviceKycModels deviceKyc) async {
     try {
       await _databases.updateDocument(
         databaseId: _databaseId,
         collectionId: _collectionId,
-        documentId: documentId,
-        data: model.toMap(),
+        documentId: deviceKyc.id, // 'id' is now required
+        data: deviceKyc.toMap(),
       );
 
-      final index = _deviceKycList.indexWhere((deviceKyc) => deviceKyc.id == documentId);
+      // Update the local list
+      final index = _deviceKycList.indexWhere((d) => d.id == deviceKyc.id);
       if (index != -1) {
-        _deviceKycList[index] = model.copyWith(id: documentId);
+        _deviceKycList[index] = deviceKyc;
         notifyListeners();
       }
+
+      debugPrint('Device KYC updated: ${deviceKyc.id}');
     } catch (e) {
       debugPrint('Error updating device KYC: $e');
-      throw Exception('Failed to update device KYC data.');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      throw Exception('Failed to update device KYC.');
     }
   }
 

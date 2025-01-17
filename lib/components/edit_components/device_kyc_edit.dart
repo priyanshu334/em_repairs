@@ -1,5 +1,5 @@
 import 'package:em_repairs/models/DeviceKycModels.dart';
-import 'package:em_repairs/components/Accessories_form.dart';
+import 'package:em_repairs/components/edit_components/accessories_edit.dart';
 import 'package:em_repairs/components/other_components/bar_code_scan_componet.dart';
 import 'package:em_repairs/components/other_components/lock_code.dart';
 import 'package:em_repairs/components/other_components/model_details.dart'; // For image handling
@@ -12,8 +12,11 @@ import 'package:uuid/uuid.dart';
 
 class DeviceKycForm extends StatefulWidget {
   final void Function(DeviceKycModels deviceKycModel) onDeviceKycSaved;
+  final DeviceKycModels?
+      deviceKycModel; // Add this to receive data for edit mode
 
-  const DeviceKycForm({Key? key, required this.onDeviceKycSaved})
+  const DeviceKycForm(
+      {Key? key, required this.onDeviceKycSaved, this.deviceKycModel})
       : super(key: key);
 
   @override
@@ -29,6 +32,25 @@ class _DeviceKycFormState extends State<DeviceKycForm> {
   String? patternCode;
   String? barcode;
   Map<String, dynamic>? accessory; // Change to Map<String, dynamic>
+
+  bool get isEditMode => widget.deviceKycModel != null; // Check if in edit mode
+
+  @override
+  void initState() {
+    super.initState();
+    if (isEditMode) {
+      // Pre-fill form with existing data if in edit mode
+      final deviceKyc = widget.deviceKycModel;
+      frontImagePath = deviceKyc?.frontImagePath;
+      backImagePath = deviceKyc?.backImagePath;
+      sideImage1Path = deviceKyc?.sideImage1Path;
+      sideImage2Path = deviceKyc?.sideImage2Path;
+      lockCode = deviceKyc?.lockCode;
+      patternCode = deviceKyc?.patternCode;
+      barcode = deviceKyc?.barcode;
+      accessory = deviceKyc?.accessoriesModel;
+    }
+  }
 
   // Handle Model Images
   void _handleModelImagesCaptured(
@@ -79,18 +101,25 @@ class _DeviceKycFormState extends State<DeviceKycForm> {
       accessoriesModel: accessory, // Pass accessory as Map<String, dynamic>
     );
 
-    // Save the data using DeviceKycProvider
     final deviceKycProvider =
         Provider.of<DeviceKycProvider>(context, listen: false);
-    await deviceKycProvider.saveDeviceKyc(deviceKycModel);
+
+    if (isEditMode) {
+      // If in edit mode, update the device KYC data
+      await deviceKycProvider.updateDeviceKyc(deviceKycModel);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Device KYC updated successfully')),
+      );
+    } else {
+      // Save the data using DeviceKycProvider (Create new entry)
+      await deviceKycProvider.saveDeviceKyc(deviceKycModel);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Device KYC saved successfully')),
+      );
+    }
 
     // Pass data to parent via the callback function
     widget.onDeviceKycSaved(deviceKycModel);
-
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Device KYC saved successfully')),
-    );
   }
 
   @override
@@ -126,7 +155,7 @@ class _DeviceKycFormState extends State<DeviceKycForm> {
                 BarCodeScannerComponent(
                     onScan: _handleBarcodeScan), // Barcode scanner
                 AccessoriesForm(
-                    onSubmit: _handleAccessoriesSubmitted), // Accessories form
+                    onSubmit: _handleAccessoriesSubmitted ,existingAccessory: AccessoriesModel.fromMap(accessory!),), // Accessories form
                 const SizedBox(height: 16),
                 Center(
                   child: ElevatedButton(
@@ -139,9 +168,9 @@ class _DeviceKycFormState extends State<DeviceKycForm> {
                       padding: const EdgeInsets.symmetric(
                           vertical: 14, horizontal: 28),
                     ),
-                    child: const Text(
-                      "Save KYC",
-                      style: TextStyle(
+                    child: Text(
+                      isEditMode ? "Update KYC" : "Save KYC",
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,

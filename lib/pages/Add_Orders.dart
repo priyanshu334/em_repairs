@@ -93,6 +93,7 @@ class _AddOrdersState extends State<AddOrders> {
       final orderId = const Uuid().v4();
 
       final order = OrderModel(
+        id: orderId,
         
         receiverDetailsModel: _receiverDetailsModel,
         customerModel: _customerModel,

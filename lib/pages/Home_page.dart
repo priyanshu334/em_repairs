@@ -1,4 +1,3 @@
-import 'package:em_repairs/models/Order_model.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:em_repairs/components/FilterSection.dart';
@@ -6,9 +5,11 @@ import 'package:em_repairs/components/Filter_tiggle_components.dart';
 import 'package:em_repairs/components/orderList_component.dart';
 import 'package:em_repairs/components/animated_floationg_button.dart';
 import 'package:em_repairs/components/custom_app_bar.dart';
-import 'package:em_repairs/pages/Edit_page.dart';
 import 'package:em_repairs/pages/help_page.dart';
 import 'package:em_repairs/provider/order_provider.dart';
+import 'package:em_repairs/components/Edit_page.dart';
+import 'package:em_repairs/models/Order_model.dart';
+import 'package:intl/intl.dart'; // Import the intl package
 
 class OrderPage extends StatefulWidget {
   @override
@@ -37,7 +38,7 @@ class _OrderPageState extends State<OrderPage> {
 
       // Debugging fetched orders
       debugPrint('Fetched Orders: ${orderProvider.orderList}');
-    
+
       if (orderProvider.orderList.isEmpty) {
         debugPrint('No orders found!');
       }
@@ -77,7 +78,8 @@ class _OrderPageState extends State<OrderPage> {
 
     if (confirm) {
       try {
-        final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+        final orderProvider =
+            Provider.of<OrderProvider>(context, listen: false);
         await orderProvider.deleteOrder(orderId); // Delete order asynchronously
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -101,6 +103,10 @@ class _OrderPageState extends State<OrderPage> {
   Widget build(BuildContext context) {
     final orderProvider = Provider.of<OrderProvider>(context);
     final orders = orderProvider.orderList;
+
+    // Get the current date and format it
+    final currentDate = DateTime.now();
+    final formattedCurrentDate = DateFormat('dd/MM/yyyy').format(currentDate);
 
     // Debugging: Check if orders are null or empty
     debugPrint('Order list in build method: $orders');
@@ -137,24 +143,7 @@ class _OrderPageState extends State<OrderPage> {
                   ),
                   if (showFilters)
                     FiltersSection(
-                      onCustomerNameChanged: (value) async {
-                        debugPrint('Customer name: $value');
-                      },
-                      onOperatorChanged: (value) async {
-                        debugPrint('Operator: $value');
-                      },
-                      onOrderChanged: (value) async {
-                        debugPrint('Order: $value');
-                      },
-                      onLocationChanged: (value) async {
-                        debugPrint('Location: $value');
-                      },
-                      onTodayPressed: () async {
-                        debugPrint('Today pressed');
-                      },
-                      onSearchPressed: () async {
-                        debugPrint('Search pressed');
-                      },
+                      orders: orders,
                     ),
                   Expanded(
                     child: ListView.builder(
@@ -168,17 +157,26 @@ class _OrderPageState extends State<OrderPage> {
                         // Access fields within optional maps
                         final customerName =
                             order.customerModel?['name'] ?? 'Not Available';
-                          
-                        final orderStatus =
 
+                        final orderStatus =
                             order.orderDetailsModel?['orderStatus'] ??
                                 'Not Available';
-                        final model =
-                            order.orderDetailsModel?['deviceModel'] ?? 'Not Available';
+                        final model = order.orderDetailsModel?['deviceModel'] ??
+                            'Not Available';
                         final customerPhone =
                             order.customerModel?['phone'] ?? 'Not Available';
-                        final dueDate =
-                            order.estimateModel?['pickupDate'] ?? 'Not Available';
+                        final dueDate = order.estimateModel?['pickupDate'] ?? 'Not Available';
+
+                        // If dueDate is available and needs to be formatted
+                        String formattedDueDate = dueDate;
+                        if (dueDate != 'Not Available' && dueDate != null) {
+                          try {
+                            final parsedDueDate = DateTime.parse(dueDate);
+                            formattedDueDate = DateFormat('dd/MM/yyyy').format(parsedDueDate);
+                          } catch (e) {
+                            debugPrint('Error formatting due date: $e');
+                          }
+                        }
 
                         return Card(
                           margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -193,9 +191,9 @@ class _OrderPageState extends State<OrderPage> {
                               children: [
                                 Text("Model: $model"),
                                 Text("Status: $orderStatus"),
-                                Text("model:$model"),
                                 Text("Customer Number: $customerPhone"),
-                                Text("Due Date: $dueDate"),
+                                Text("Due Date: $formattedDueDate"), // Display formatted due date
+                                Text("Current Date: $formattedCurrentDate"), // Display formatted current date
                               ],
                             ),
                             trailing: Row(
@@ -210,14 +208,8 @@ class _OrderPageState extends State<OrderPage> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => EditPage(
-                                          orderId: order.id!,
-                                          receiverId:
-                                              order.receiverDetailsModel?['id'],
-                                          estimateId:
-                                              order.estimateModel?['id'],
-                                          repairPartnerId:
-                                              order.repairPartnerDetailsModel?['id'],
+                                        builder: (context) => EditOrderPage(
+                                          orderId: order.id,
                                         ),
                                       ),
                                     );
@@ -226,7 +218,7 @@ class _OrderPageState extends State<OrderPage> {
                                 IconButton(
                                   icon: const Icon(Icons.delete,
                                       color: Colors.red),
-                                  onPressed: () => _deleteOrder(order.id!),
+                                  onPressed: () => _deleteOrder(order.id),
                                 ),
                               ],
                             ),

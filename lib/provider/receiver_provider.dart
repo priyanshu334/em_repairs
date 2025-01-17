@@ -30,7 +30,7 @@ class ReceiverDetailsProvider extends ChangeNotifier {
 
       _receivers.clear();
       for (var doc in response.documents) {
-        _receivers.add(ReceiverDetailsModel.fromMap(doc.data)); // No `doc.$id`
+        _receivers.add(ReceiverDetailsModel.fromMap(doc.data, documentId: doc.$id));
       }
       notifyListeners();
     } catch (e) {
@@ -46,15 +46,11 @@ class ReceiverDetailsProvider extends ChangeNotifier {
         databaseId: databaseId,
         collectionId: collectionId,
         documentId: ID.unique(), // Let Appwrite generate an ID
-        data: {
-          'name': receiver.name,
-          'isOwner': receiver.isOwner,
-          'isStaff': receiver.isStaff,
-        },
+        data: receiver.toMap(),
       );
 
-      // Add the receiver to the list
-      _receivers.add(ReceiverDetailsModel.fromMap(response.data,documentId: response.$id)); // No `response.$id`
+      // Add the receiver to the list with the generated ID
+      _receivers.add(ReceiverDetailsModel.fromMap(response.data, documentId: response.$id));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding receiver details: $e');
@@ -65,13 +61,13 @@ class ReceiverDetailsProvider extends ChangeNotifier {
   Future<void> removeReceiver(ReceiverDetailsModel receiver) async {
     try {
       final databases = Databases(_appwriteService.client);
-      if (receiver.id == null) {
+      if (receiver.id.isEmpty) {
         throw Exception('Cannot remove a receiver without an ID.');
       }
       await databases.deleteDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: receiver.id!, // Use the receiver's ID
+        documentId: receiver.id, // Use the receiver's ID
       );
 
       _receivers.remove(receiver);
@@ -85,6 +81,35 @@ class ReceiverDetailsProvider extends ChangeNotifier {
   void selectReceiver(ReceiverDetailsModel receiver) {
     _selectedReceiver = receiver;
     notifyListeners();
+  }
+
+  // Update receiver details in Appwrite and the list
+  Future<void> updateReceiver(ReceiverDetailsModel updatedReceiver) async {
+    try {
+      final databases = Databases(_appwriteService.client);
+    
+      if (updatedReceiver.id.isEmpty) {
+        throw Exception('Cannot update a receiver without an ID.');
+      }
+
+      // Update the receiver document in Appwrite
+      final response = await databases.updateDocument(
+        databaseId: databaseId,
+        collectionId: collectionId,
+        documentId: updatedReceiver.id, // Use the receiver's ID
+        data: updatedReceiver.toMap(),
+      );
+
+      // Update the receiver in the local list
+      int index = _receivers.indexWhere((receiver) => receiver.id == updatedReceiver.id);
+      if (index != -1) {
+        _receivers[index] = updatedReceiver;
+      }
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating receiver details: $e');
+    }
   }
 
   // Remove selected receiver
@@ -110,7 +135,7 @@ class ReceiverDetailsProvider extends ChangeNotifier {
         documentId: id,
       );
 
-      return ReceiverDetailsModel.fromMap(response.toMap()); // No `id` passed
+      return ReceiverDetailsModel.fromMap(response.toMap(), documentId: response.$id);
     } catch (e) {
       debugPrint('Error fetching receiver by ID: $e');
       throw Exception('Failed to fetch receiver by ID.');

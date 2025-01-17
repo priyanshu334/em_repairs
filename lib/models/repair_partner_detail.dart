@@ -1,5 +1,5 @@
 class RepairPartnerDetailsModel {
-  final String? id; // Optional ID
+  final String id; // 'id' is now required and non-nullable
   final bool isInHouse;
   final bool isServiceCenter;
   final String? selectedOperator; // Only for in-house repairs
@@ -8,7 +8,7 @@ class RepairPartnerDetailsModel {
   final String? pickupTime; // Only for service center repairs
 
   RepairPartnerDetailsModel({
-    this.id, // 'id' is optional now
+    required this.id, // 'id' is now required
     required this.isInHouse,
     required this.isServiceCenter,
     this.selectedOperator,
@@ -20,7 +20,7 @@ class RepairPartnerDetailsModel {
   /// Convert the model to a JSON map for storage
   Map<String, dynamic> toMap() {
     return {
-      if (id != null) 'id': id, // Include 'id' only if it's not null
+      'id': id, // Include 'id' in the map
       'isInHouse': isInHouse,
       'isServiceCenter': isServiceCenter,
       'selectedOperator': selectedOperator,
@@ -31,9 +31,9 @@ class RepairPartnerDetailsModel {
   }
 
   /// Create a model instance from a JSON map
-  factory RepairPartnerDetailsModel.fromMap(Map<String, dynamic> map, [String? documentId]) {
+  factory RepairPartnerDetailsModel.fromMap(Map<String, dynamic> map, {required String documentId}) {
     return RepairPartnerDetailsModel(
-      id: documentId ?? map['id'], // Use document ID if provided, fallback to 'id' in map
+      id: documentId, // 'id' is now required
       isInHouse: map['isInHouse'] ?? false,
       isServiceCenter: map['isServiceCenter'] ?? false,
       selectedOperator: map['selectedOperator'],
@@ -70,7 +70,7 @@ class RepairPartnerDetailsModel {
     return 'RepairPartnerDetailsModel(id: $id, isInHouse: $isInHouse, isServiceCenter: $isServiceCenter, selectedOperator: $selectedOperator, selectedServiceCenter: $selectedServiceCenter, pickupDate: $pickupDate, pickupTime: $pickupTime)';
   }
 
-  // CopyWith method for easier updates
+  /// CopyWith method for easier updates
   RepairPartnerDetailsModel copyWith({
     String? id,
     bool? isInHouse,

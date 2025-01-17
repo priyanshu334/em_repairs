@@ -6,8 +6,13 @@ import 'package:uuid/uuid.dart'; // Import receiver provider
 
 class ReceiverDetails extends StatefulWidget {
   final Function(ReceiverDetailsModel receiver) onReceiverAdded; // Callback for the entire receiver model
+  final ReceiverDetailsModel? existingReceiver; // Optional existing receiver model for editing
 
-  const ReceiverDetails({Key? key, required this.onReceiverAdded}) : super(key: key);
+  const ReceiverDetails({
+    Key? key,
+    required this.onReceiverAdded,
+    this.existingReceiver,
+  }) : super(key: key);
 
   @override
   _ReceiverDetailsState createState() => _ReceiverDetailsState();
@@ -17,6 +22,18 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
   final TextEditingController _nameController = TextEditingController();
   bool isOwner = false;
   bool isStaff = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // If there's an existing receiver, prepopulate the fields
+    if (widget.existingReceiver != null) {
+      _nameController.text = widget.existingReceiver!.name;
+      isOwner = widget.existingReceiver!.isOwner;
+      isStaff = widget.existingReceiver!.isStaff;
+    }
+  }
 
   @override
   void dispose() {
@@ -111,14 +128,19 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
                 onPressed: () async {
                   try {
                     final receiver = ReceiverDetailsModel(
-                       id: const Uuid().v4(), // Let Appwrite generate the ID
+                             id: const Uuid().v4(), // Use existing ID if available, otherwise null for new
                       name: _nameController.text,
                       isOwner: isOwner,
                       isStaff: isStaff,
                     );
 
-                    // Add receiver and let Appwrite generate the ID
-                    await receiverDetailsProvider.addReceiver(receiver);
+                    if (widget.existingReceiver == null) {
+                      // Add new receiver
+                      await receiverDetailsProvider.addReceiver(receiver);
+                    } else {
+                      // Update existing receiver
+                      await receiverDetailsProvider.updateReceiver(receiver);
+                    }
 
                     // Notify the parent widget with the entire receiver model
                     widget.onReceiverAdded(receiver);
@@ -130,7 +152,7 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
                       });
                     }
                   } catch (e) {
-                    debugPrint('Error adding receiver: $e');
+                    debugPrint('Error saving/updating receiver: $e');
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -140,9 +162,11 @@ class _ReceiverDetailsState extends State<ReceiverDetails> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text(
-                  "Save Details",
-                  style: TextStyle(
+                child: Text(
+                  widget.existingReceiver == null
+                      ? "Save Details"
+                      : "Update Details", // Change button text based on editing or adding
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 15,

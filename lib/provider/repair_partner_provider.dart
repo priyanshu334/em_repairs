@@ -35,7 +35,7 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
         _repairPartnerDetailsList.add(
           RepairPartnerDetailsModel.fromMap(
             doc.data,
-            doc.$id, // Use Appwrite document ID
+            documentId: doc.$id, // Use Appwrite document ID as the id
           ),
         );
       }
@@ -53,14 +53,14 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
       final response = await databases.createDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: details.id ?? 'unique()', // Use 'unique()' if ID is null
+        documentId: details.id, // Use the id from details
         data: details.toMap(),
       );
 
       _repairPartnerDetailsList.add(
         RepairPartnerDetailsModel.fromMap(
           response.data,
-          response.$id, // Use generated ID
+          documentId: response.$id, // Use the generated ID from Appwrite
         ),
       );
       notifyListeners();
@@ -73,7 +73,7 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
   Future<void> updateRepairPartnerDetails(
       RepairPartnerDetailsModel details) async {
     try {
-      if (details.id == null) {
+      if (details.id.isEmpty) {
         throw Exception('Cannot update a repair partner detail without an ID.');
       }
 
@@ -81,7 +81,7 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
       await databases.updateDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: details.id!,
+        documentId: details.id,
         data: details.toMap(),
       );
 
@@ -100,7 +100,7 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
   Future<void> removeRepairPartnerDetails(
       RepairPartnerDetailsModel details) async {
     try {
-      if (details.id == null) {
+      if (details.id.isEmpty) {
         throw Exception('Cannot remove a repair partner detail without an ID.');
       }
 
@@ -108,7 +108,7 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
       await databases.deleteDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: details.id!,
+        documentId: details.id,
       );
 
       _repairPartnerDetailsList.remove(details);
@@ -150,7 +150,7 @@ class RepairPartnerDetailsProvider extends ChangeNotifier {
         documentId: id,
       );
 
-      return RepairPartnerDetailsModel.fromMap(response.data, response.$id);
+      return RepairPartnerDetailsModel.fromMap(response.data, documentId: response.$id);
     } catch (e) {
       debugPrint('Error fetching repair partner detail by ID: $e');
       throw Exception('Failed to fetch repair partner detail by ID.');

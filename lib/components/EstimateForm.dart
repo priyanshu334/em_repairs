@@ -2,6 +2,7 @@ import 'package:em_repairs/models/estimate_form.dart';
 import 'package:em_repairs/provider/estimate_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart'; // Import uuid package
 
 class EstimateForm extends StatefulWidget {
   final Function(EstimateModel newEstimate) onEstimateAdded;
@@ -167,8 +168,10 @@ class _EstimateFormState extends State<EstimateForm> {
                       advancePaidController.text.isNotEmpty &&
                       pickupDate != null &&
                       pickupTime != null) {
+                      
                     // Create the EstimateModel
                     EstimateModel newEstimate = EstimateModel(
+                      id: const Uuid().v4(), // Generate unique ID using uuid
                       repairCost: double.tryParse(repairCostController.text) ?? 0.0,
                       advancePaid: double.tryParse(advancePaidController.text) ?? 0.0,
                       pickupDate: pickupDate!,
@@ -193,14 +196,6 @@ class _EstimateFormState extends State<EstimateForm> {
                         duration: const Duration(seconds: 3),
                       ),
                     );
-
-                    // Reset fields after saving
-                    repairCostController.clear();
-                    advancePaidController.clear();
-                    setState(() {
-                      pickupDate = null;
-                      pickupTime = null;
-                    });
                   } else {
                     // Show error Snackbar
                     ScaffoldMessenger.of(context).showSnackBar(

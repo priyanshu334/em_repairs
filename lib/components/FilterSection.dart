@@ -1,28 +1,25 @@
-import 'package:em_repairs/components/service_center_details.dart';
-import 'package:em_repairs/provider/customer_provider.dart';
-import 'package:em_repairs/provider/service_center_provider.dart';
+import 'package:em_repairs/models/service_center_model.dart';
+import 'package:em_repairs/models/service_provider_model.dart';
 import 'package:em_repairs/provider/service_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Import provider package
+import 'package:provider/provider.dart';
+import 'package:em_repairs/models/Order_model.dart';
+import 'package:em_repairs/provider/order_provider.dart';
+import 'package:em_repairs/provider/service_center_provider.dart';
 
-import 'package:em_repairs/services/apwrite_service.dart';
 
 class FiltersSection extends StatefulWidget {
   final Function(String)? onCustomerNameChanged;
-  final Function(String?)? onOperatorChanged;
-  final Function(String?)? onOrderChanged;
-  final Function(String?)? onLocationChanged;
   final VoidCallback? onTodayPressed;
   final VoidCallback? onSearchPressed;
+  final List<OrderModel> orders;
 
   const FiltersSection({
     Key? key,
     this.onCustomerNameChanged,
-    this.onOperatorChanged,
-    this.onOrderChanged,
-    this.onLocationChanged,
     this.onTodayPressed,
     this.onSearchPressed,
+    required this.orders,
   }) : super(key: key);
 
   @override
@@ -32,6 +29,9 @@ class FiltersSection extends StatefulWidget {
 class _FiltersSectionState extends State<FiltersSection> {
   DateTime? selectedDate;
   String customerSearchQuery = "";
+
+  ServiceCenterModel? selectedServiceCenter;
+  ServiceProviderModel? selectedServiceProvider;
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -49,14 +49,21 @@ class _FiltersSectionState extends State<FiltersSection> {
 
   @override
   Widget build(BuildContext context) {
-    // Fetch the CustomerProvider and ServiceProviderProvider instances
-    final customerProvider = Provider.of<CustomerProvider>(context);
-    final serviceProviderProvider =
-        Provider.of<ServiceProviderProvider>(context);
+    final orderProvider = Provider.of<OrderProvider>(context);
     final serviceCenterProvider = Provider.of<ServiceCenterProvider>(context);
+    final serviceProviderProvider = Provider.of<ServiceProviderProvider>(context);
+
+    // Filter the orders based on the customerSearchQuery
+    final filteredOrders = widget.orders.where((order) {
+      final customerName =
+          order.customerModel?['name'] ?? ''; // Ensure we are comparing valid strings
+      return customerName.toLowerCase().contains(customerSearchQuery.toLowerCase());
+    }).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // Search TextField for Customer Name
         TextField(
           decoration: InputDecoration(
             hintText: 'Enter Customer Name',
@@ -65,13 +72,13 @@ class _FiltersSectionState extends State<FiltersSection> {
               borderRadius: BorderRadius.circular(12),
             ),
             filled: true,
-            fillColor: Colors.grey.shade100,
+            fillColor: const Color.fromARGB(255, 77, 9, 9),
           ),
           onChanged: (value) {
             setState(() {
               customerSearchQuery = value;
             });
-            customerProvider.searchCustomers(value!); // Trigger search
+
             if (widget.onCustomerNameChanged != null) {
               widget.onCustomerNameChanged!(value);
             }
@@ -79,160 +86,114 @@ class _FiltersSectionState extends State<FiltersSection> {
         ),
         SizedBox(height: 16),
 
-        // Operator Dropdown
-        serviceProviderProvider.serviceProviders.isNotEmpty
-            ? DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                ),
-                hint: Text('Select Operator'),
-                items: serviceProviderProvider.serviceProviders
-                    .map<DropdownMenuItem<String>>((serviceProvider) {
-                  return DropdownMenuItem<String>(
-                    value: serviceProvider.id,
-                    child: Text(serviceProvider.name), // Display operator name
-                  );
-                }).toList(),
-                onChanged: widget.onOperatorChanged,
-              )
-            : Center(
-                child:
-                    CircularProgressIndicator()), // Show loading while fetching
-
-        SizedBox(height: 16),
-
-        serviceCenterProvider.serviceCenters.isNotEmpty
-            ? DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                ),
-                hint: Text('Select service center'),
-                items: serviceCenterProvider.serviceCenters
-                    .map<DropdownMenuItem<String>>((serviceProvider) {
-                  return DropdownMenuItem<String>(
-                    value: serviceProvider.id,
-                    child: Text(serviceProvider.name), // Display operator name
-                  );
-                }).toList(),
-                onChanged: widget.onOperatorChanged,
-              )
-            : Center(
-                child:
-                    CircularProgressIndicator()), // Show loading while fetching
-
-        SizedBox(height: 16),
-
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            filled: true,
-            fillColor: Colors.grey.shade100,
-          ),
-          hint: Text('Select Repair Location'),
-          items: <String>['Location 1', 'Location 2', 'Location 3']
-              .map<DropdownMenuItem<String>>((String value) {
-            return DropdownMenuItem<String>(
-              value: value,
-              child: Text(value),
+        // Dropdown for selecting Service Center
+        DropdownButton<ServiceCenterModel>(
+          value: selectedServiceCenter,
+          hint: Text('Select Service Center'),
+          onChanged: (ServiceCenterModel? newValue) {
+            setState(() {
+              selectedServiceCenter = newValue;
+            });
+          },
+          items: serviceCenterProvider.serviceCenters.map((serviceCenter) {
+            return DropdownMenuItem<ServiceCenterModel>(
+              value: serviceCenter,
+              child: Text(serviceCenter.name),
             );
           }).toList(),
-          onChanged: widget.onLocationChanged,
         ),
+
         SizedBox(height: 16),
 
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                readOnly: true,
-                decoration: InputDecoration(
-                  hintText: selectedDate == null
-                      ? 'Select Date (dd/mm/yyyy)'
-                      : '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.grey.shade100,
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.calendar_today, color: Colors.blueAccent),
-                    onPressed: () => _selectDate(context),
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: widget.onTodayPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal.shade600,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                "Today",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.white),
-              ),
-            ),
-            SizedBox(width: 10),
-            ElevatedButton(
-              onPressed: widget.onSearchPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: Text(
-                "Search",
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Colors.white),
-              ),
-            ),
-          ],
+        // Dropdown for selecting Service Provider
+        DropdownButton<ServiceProviderModel>(
+          value: selectedServiceProvider,
+          hint: Text('Select Service Provider'),
+          onChanged: (ServiceProviderModel? newValue) {
+            setState(() {
+              selectedServiceProvider = newValue;
+            });
+          },
+          items: serviceProviderProvider.serviceProviders.map((serviceProvider) {
+            return DropdownMenuItem<ServiceProviderModel>(
+              value: serviceProvider,
+              child: Text(serviceProvider.name),
+            );
+          }).toList(),
         ),
-        // Display the search results
+
+        SizedBox(height: 16),
+
+        // Display the search results for orders
         if (customerSearchQuery.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("Search Results:",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                ...customerProvider.customers
-                    .where((customer) => customer.name
-                        .toLowerCase()
-                        .contains(customerSearchQuery.toLowerCase()))
-                    .map((customer) => ListTile(
-                          title: Text(customer.name),
-                          subtitle: Text(customer.phone),
-                          onTap: () {
-                            // Handle selection if needed
-                          },
-                        ))
-                    .toList(),
-              ],
-            ),
-          ),
+          orderProvider.isLoading
+              ? Center(child: CircularProgressIndicator())
+              : filteredOrders.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Text("No orders found for this customer."),
+                    )
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Order Results for '$customerSearchQuery':",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          ...filteredOrders.map((order) {
+                            final customerName =
+                                order.customerModel?['name'] ?? 'Not Available';
+                            final orderStatus =
+                                order.orderDetailsModel?['orderStatus'] ??
+                                    'Not Available';
+                            final model = order.orderDetailsModel?['deviceModel'] ??
+                                'Not Available';
+                            final customerPhone =
+                                order.customerModel?['phone'] ?? 'Not Available';
+                            final dueDate = order.estimateModel?['pickupDate'] ??
+                                'Not Available';
+
+                            return Card(
+                              margin: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: ListTile(
+                                title: Text(
+                                  customerName,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("Model: $model"),
+                                    Text("Status: $orderStatus"),
+                                    Text("Customer Number: $customerPhone"),
+                                    Text("Due Date: $dueDate"),
+                                  ],
+                                ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, color: Colors.blue),
+                                      onPressed: () {
+                                        // Handle editing the order
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () {
+                                        // Handle deleting the order
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ],
+                      ),
+                    ),
       ],
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DeviceKycModels {
-  final String? id; // Make 'id' nullable
+  final String id; // Make 'id' non-nullable
   final String? frontImagePath;
   final String? backImagePath;
   final String? sideImage1Path;
@@ -12,7 +12,7 @@ class DeviceKycModels {
   final Map<String, dynamic>? accessoriesModel; // Changed to Map for Appwrite
 
   DeviceKycModels({
-    this.id, // Nullable 'id'
+    required this.id, // 'id' is now required
     this.frontImagePath,
     this.backImagePath,
     this.sideImage1Path,
@@ -26,6 +26,7 @@ class DeviceKycModels {
   // Convert the model to a map (for Appwrite Database operations)
   Map<String, dynamic> toMap() {
     return {
+      'id': id, // Include 'id' in the map
       'frontImagePath': frontImagePath,
       'backImagePath': backImagePath,
       'sideImage1Path': sideImage1Path,
@@ -38,9 +39,9 @@ class DeviceKycModels {
   }
 
   // Create a model from a map (useful for parsing Appwrite's response)
-  factory DeviceKycModels.fromMap(Map<String, dynamic> map, {String? documentId}) {
+  factory DeviceKycModels.fromMap(Map<String, dynamic> map) {
     return DeviceKycModels(
-      id: documentId, // Use the document ID from Appwrite response (nullable)
+      id: map['id'], // 'id' is now mandatory
       frontImagePath: map['frontImagePath'],
       backImagePath: map['backImagePath'],
       sideImage1Path: map['sideImage1Path'],

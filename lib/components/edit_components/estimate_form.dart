@@ -2,14 +2,13 @@ import 'package:em_repairs/models/estimate_form.dart';
 import 'package:em_repairs/provider/estimate_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class EstimateForm extends StatefulWidget {
-  final String? estimateId; // ID of the estimate to be updated
+  final Function(EstimateModel newEstimate) onEstimateAdded;
+  final EstimateModel? existingEstimate; // New parameter for existing estimate
 
-  const EstimateForm({
-    Key? key,
-    this.estimateId,  // Receiving estimate ID from parent
-  }) : super(key: key);
+  const EstimateForm({Key? key, required this.onEstimateAdded, this.existingEstimate}) : super(key: key);
 
   @override
   State<EstimateForm> createState() => _EstimateFormState();
@@ -19,32 +18,31 @@ class _EstimateFormState extends State<EstimateForm> {
   final TextEditingController repairCostController = TextEditingController();
   final TextEditingController advancePaidController = TextEditingController();
   DateTime? pickupDate;
-  String? pickupTime; // Using String for pickupTime as per the model
-
-  late EstimateProvider _estimateProvider;
+  String? pickupTime;
 
   @override
   void initState() {
     super.initState();
-    _estimateProvider = Provider.of<EstimateProvider>(context, listen: false);
-    if (widget.estimateId != null) {
-      // Fetch the estimate data based on the provided ID
-      fetchEstimate();
+
+    // Initialize fields if editing an existing estimate
+    if (widget.existingEstimate != null) {
+      repairCostController.text = widget.existingEstimate!.repairCost.toString();
+      advancePaidController.text = widget.existingEstimate!.advancePaid.toString();
+      pickupDate = widget.existingEstimate!.pickupDate;
+      pickupTime = widget.existingEstimate!.pickupTime;
     }
   }
 
-  // Fetch the estimate using the passed estimateId
-  Future<void> fetchEstimate() async {
-    try {
-      final EstimateModel estimate = await _estimateProvider.getEstimateById(widget.estimateId!);
-      setState(() {
-        repairCostController.text = estimate.repairCost.toString();
-        advancePaidController.text = estimate.advancePaid.toString();
-        pickupDate = estimate.pickupDate;
-        pickupTime = estimate.pickupTime;
-      });
-    } catch (e) {
-      debugPrint('Error fetching estimate: $e');
+  @override
+  void didUpdateWidget(covariant EstimateForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If the existing estimate changes, update the form with the new estimate details
+    if (widget.existingEstimate != oldWidget.existingEstimate) {
+      repairCostController.text = widget.existingEstimate?.repairCost.toString() ?? '';
+      advancePaidController.text = widget.existingEstimate?.advancePaid.toString() ?? '';
+      pickupDate = widget.existingEstimate?.pickupDate;
+      pickupTime = widget.existingEstimate?.pickupTime;
     }
   }
 
@@ -60,8 +58,8 @@ class _EstimateFormState extends State<EstimateForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.estimateId == null ? "Create Estimate" : "Update Estimate",
+              const Text(
+                "Estimates",
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -163,7 +161,8 @@ class _EstimateFormState extends State<EstimateForm> {
                         );
                         if (selectedTime != null) {
                           setState(() {
-                            pickupTime = '${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}';
+                            pickupTime =
+                                "${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}";
                           });
                         }
                       },
@@ -178,7 +177,8 @@ class _EstimateFormState extends State<EstimateForm> {
                       );
                       if (selectedTime != null) {
                         setState(() {
-                          pickupTime = '${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}';
+                          pickupTime =
+                              "${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}";
                         });
                       }
                     },
@@ -193,33 +193,60 @@ class _EstimateFormState extends State<EstimateForm> {
                       advancePaidController.text.isNotEmpty &&
                       pickupDate != null &&
                       pickupTime != null) {
-                    // Create or Update Estimate
-                    EstimateModel updatedEstimate = EstimateModel(
-                      id: widget.estimateId, // Use the existing ID or leave null for creation
+                    // Create the EstimateModel
+                    EstimateModel newEstimate = EstimateModel(
+                             id: const Uuid().v4(),
                       repairCost: double.tryParse(repairCostController.text) ?? 0.0,
                       advancePaid: double.tryParse(advancePaidController.text) ?? 0.0,
                       pickupDate: pickupDate!,
-                      pickupTime: pickupTime!, // Set as a String
+                      pickupTime: pickupTime!,
                     );
 
-                    // Update or create the estimate using the provider
-                    if (widget.estimateId != null) {
-                      // Update the existing estimate
-                      await _estimateProvider.updateEstimate(updatedEstimate);
-                    } else {
-                      // Create a new estimate
-                      await _estimateProvider.addEstimate(updatedEstimate);
-                    }
+                    // Call addEstimate method from EstimateProvider to save the estimate
+                    await Provider.of<EstimateProvider>(context, listen: false)
+                        .addEstimate(newEstimate);
 
-                    // Optionally close the form or reset the fields
-                    Navigator.pop(context);
+                    // Optionally, pass the entire estimate model back to the parent
+                    widget.onEstimateAdded(newEstimate);
+
+                    // Show success Snackbar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Estimate saved successfully!',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        backgroundColor: Colors.green,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+
+                    // Reset fields after saving
+                    repairCostController.clear();
+                    advancePaidController.clear();
+                    setState(() {
+                      pickupDate = null;
+                      pickupTime = null;
+                    });
+                  } else {
+                    // Show error Snackbar
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Please fill in all fields.',
+                          style: TextStyle(fontSize: 16),
+                        ),
+                        backgroundColor: Colors.red,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
                   }
                 },
                 child: Container(
                   padding: const EdgeInsets.all(5),
-                  child: Text(
-                    widget.estimateId == null ? "Create Estimate" : "Update Estimate",
-                    style: const TextStyle(
+                  child: const Text(
+                    "Save Data",
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 15,

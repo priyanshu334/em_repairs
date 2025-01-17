@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
+import 'package:em_repairs/models/accessories_model.dart';
+import 'package:em_repairs/provider/accesories_provider.dart';
+import 'package:provider/provider.dart';
 
 class AccessoriesForm extends StatefulWidget {
-  final Function(Map<String, dynamic> accessoryData)? onSubmit;
+  final Function(AccessoriesModel accessory)? onSubmit;
+  final AccessoriesModel? existingAccessory; // New field to pass an existing accessory
 
-  const AccessoriesForm({Key? key, this.onSubmit}) : super(key: key);
+  const AccessoriesForm({Key? key, this.onSubmit, this.existingAccessory})
+      : super(key: key);
 
   @override
   _AccessoriesFormState createState() => _AccessoriesFormState();
@@ -22,6 +26,24 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
   // Store additional accessories (other than predefined ones like power adapter)
   List<String> otherAccessories = [];
 
+  @override
+  void initState() {
+    super.initState();
+
+    // If an existing accessory is provided, prepopulate the form fields
+    if (widget.existingAccessory != null) {
+      final accessory = widget.existingAccessory!;
+      accessoryController.text = accessory.otherAccessories.join(', ');
+      detailsController.text = accessory.additionalDetails!;
+      isPowerAdapterChecked = accessory.isPowerAdapterChecked;
+      isKeyboardChecked = accessory.isKeyboardChecked;
+      isMouseChecked = accessory.isMouseChecked;
+      isWarrantyChecked = accessory.isWarrantyChecked;
+      selectedDate = accessory.warrantyDate;
+      otherAccessories = List.from(accessory.otherAccessories);
+    }
+  }
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -36,44 +58,46 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
     }
   }
 
-
-  void _submitForm() {
+  void _submitForm() async {
     final String accessoryName = accessoryController.text;
     final String additionalDetails = detailsController.text;
     final bool warranty = isWarrantyChecked;
     final DateTime? warrantyDate = selectedDate;
 
-    // Generate a UUID for the accessory
-    String accessoryId = Uuid().v4(); // Generate a unique ID for the accessory
+    // Create an instance of AccessoriesModel
+    AccessoriesModel newAccessory = AccessoriesModel(
+      additionalDetails: additionalDetails,
+      isWarrantyChecked: warranty,
+      warrantyDate: warrantyDate,
+      isPowerAdapterChecked: isPowerAdapterChecked,
+      isKeyboardChecked: isKeyboardChecked,
+      isMouseChecked: isMouseChecked,
+      otherAccessories: List<String>.from(otherAccessories),  // Save other accessories
+    );
 
-    // Create an accessory data map
-    Map<String, dynamic> newAccessory = {
-      'id': accessoryId,
-      'additionalDetails': additionalDetails,
-      'isWarrantyChecked': warranty,
-      'warrantyDate': warrantyDate,
-      'isPowerAdapterChecked': isPowerAdapterChecked,
-      'isKeyboardChecked': isKeyboardChecked,
-      'isMouseChecked': isMouseChecked,
-      'otherAccessories': otherAccessories,
-    };
-
-    // Call the onSubmit callback with the accessory data
-    if (widget.onSubmit != null) {
-      widget.onSubmit!(newAccessory);
+    if (widget.existingAccessory != null) {
+      // If the accessory exists (i.e., we are editing), update it
+      newAccessory = newAccessory.copyWith(id: widget.existingAccessory!.id);
+      
+      // Update the accessory using the AccessoriesProvider
+      await context.read<AccessoriesProvider>().updateAccessories(newAccessory);
+    } else {
+      // Otherwise, create a new accessory
+      await context.read<AccessoriesProvider>().saveAccessories(newAccessory);
     }
 
-    // Clear the form after submission
-    setState(() {
-      isPowerAdapterChecked = false;
-      isKeyboardChecked = false;
-      isMouseChecked = false;
-      isWarrantyChecked = false;
-      accessoryController.clear();
-      detailsController.clear();
-      selectedDate = null;
-      otherAccessories.clear();
-    });
+    // Optional: Show a success message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Accessory ${widget.existingAccessory != null ? 'updated' : 'added'} successfully!')),
+    );
+
+    // Send the saved or updated model back to the parent via the onSubmit callback
+    if (widget.onSubmit != null) {
+      final savedAccessory = widget.existingAccessory != null
+          ? newAccessory // Return the updated model
+          : context.read<AccessoriesProvider>().accessories.last; // For new model
+      widget.onSubmit!(savedAccessory);  // Send the saved or updated model
+    }
   }
 
   @override
@@ -85,7 +109,7 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
         children: [
           // Title
           Text(
-            "Accessories List",
+            widget.existingAccessory != null ? "Update Accessory" : "Accessories List",
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -203,7 +227,7 @@ class _AccessoriesFormState extends State<AccessoriesForm> {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 2),
               child: Text(
-                "Submit",
+                widget.existingAccessory != null ? "Update" : "Submit",
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,

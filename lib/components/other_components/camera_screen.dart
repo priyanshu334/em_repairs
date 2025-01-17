@@ -1,16 +1,15 @@
 import 'dart:io';
-import 'package:em_repairs/components/other_components/image_capture_grid.dart';
+import 'package:em_repairs/services/apwrite_service.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:appwrite/appwrite.dart';
+
 
 class CameraScreen extends StatelessWidget {
   final String title;
   final CameraController controller;
   final Future<void> initializeControllerFuture;
-  final Function(String)
-      onCapture; // Callback to pass the file path to the parent
+  final Function(String) onCapture; // Callback to pass the file URL to the parent
 
   const CameraScreen({
     Key? key,
@@ -21,7 +20,6 @@ class CameraScreen extends StatelessWidget {
   }) : super(key: key);
 
   @override
-
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -144,27 +142,30 @@ class CameraScreen extends StatelessWidget {
       // Capture the image
       final XFile image = await controller.takePicture();
 
-      // Save the image to local storage and retrieve the file path
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName =
-          DateTime.now().millisecondsSinceEpoch.toString() + '.jpg';
-      final localPath = '${directory.path}/$fileName';
-      final file = File(localPath);
-      await file.writeAsBytes(await image.readAsBytes());
+      // Initialize AppwriteService
+      final appwriteService = AppwriteService();
 
-      // Store the file path in SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('captured_image_path', localPath);
+      // Define your bucket ID
+      final String bucketId = '67875ad0003c971da9c2'; // Replace with your Appwrite bucket ID
 
-      // Pass the captured image path to the parent widget via the onCapture callback
-      onCapture(localPath);
+      // Upload the image to Appwrite Storage
+      final String fileId = await appwriteService.uploadFile(bucketId, image.path);
 
-      // Navigate back to the previous screen (or you can replace this with any logic you want)
-     
+      // Construct the public URL for the uploaded file
+      final fileUrl =
+          'https://cloud.appwrite.io/v1/storage/buckets/$bucketId/files/$fileId/view?project=6786907f002851a39732';
+
+      // Pass the uploaded file URL to the parent widget via the onCapture callback
+      onCapture(fileUrl);
+
+      // Show a success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image uploaded successfully!')),
+      );
     } catch (e) {
       // Show an error message if something goes wrong
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error capturing or saving image: $e')),
+        SnackBar(content: Text('Error capturing or uploading image: $e')),
       );
     }
   }

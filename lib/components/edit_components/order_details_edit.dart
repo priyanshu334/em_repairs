@@ -1,29 +1,30 @@
+import 'package:em_repairs/models/order_details_models.dart';
 import 'package:em_repairs/provider/order_details_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:uuid/uuid.dart';
-import 'package:em_repairs/models/order_details_models.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
+class OrderDetailsForm extends StatefulWidget {
+  final Function(OrderDetailsModel order)
+      onOrderAdded; // Callback for the entire order object
+  final OrderDetailsModel? existingOrder; // Existing order to edit (nullable)
 
-class OrderDetails extends StatefulWidget {
-  final String? orderId; // ID of the order to update (if any)
-
-  const OrderDetails({
+  const OrderDetailsForm({
     Key? key,
-    this.orderId,
+    required this.onOrderAdded,
+    this.existingOrder,
   }) : super(key: key);
 
   @override
-  _OrderDetailsState createState() => _OrderDetailsState();
+  _OrderDetailsFormState createState() => _OrderDetailsFormState();
 }
 
-class _OrderDetailsState extends State<OrderDetails> {
+class _OrderDetailsFormState extends State<OrderDetailsForm> {
   final TextEditingController _deviceModelController = TextEditingController();
   final TextEditingController _problemController = TextEditingController();
-  final Uuid uuid = Uuid();
   final List<String> _problems = [];
-
   String _selectedOrderStatus = 'Pending';
+
   final List<String> _orderStatusOptions = [
     'Pending',
     'Repaired',
@@ -34,24 +35,27 @@ class _OrderDetailsState extends State<OrderDetails> {
   @override
   void initState() {
     super.initState();
-    if (widget.orderId != null) {
-      _loadOrderDetails();
+
+    // Initialize fields if editing an existing order
+    if (widget.existingOrder != null) {
+      _deviceModelController.text = widget.existingOrder!.deviceModel;
+      _selectedOrderStatus = widget.existingOrder!.orderStatus.toString();
+      _problems.addAll(widget.existingOrder!.problems);
     }
   }
 
-  Future<void> _loadOrderDetails() async {
-    final provider = Provider.of<OrderDetailsProvider>(context, listen: false);
-    try {
-      final order = await provider.getOrderDetailById(widget.orderId!);
-      setState(() {
-        _deviceModelController.text = order.deviceModel;
-        _problems.addAll(order.problems);
-        _selectedOrderStatus = _orderStatusOptions[order.orderStatus.index];
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error loading order details: $e")),
-      );
+  @override
+  void didUpdateWidget(covariant OrderDetailsForm oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // If the existing order changes, update the form with the new order details
+    if (widget.existingOrder != oldWidget.existingOrder) {
+      _deviceModelController.text = widget.existingOrder?.deviceModel ?? '';
+      _selectedOrderStatus = widget.existingOrder != null
+          ? widget.existingOrder!.orderStatus.toString()
+          : 'Pending';
+
+      _problems.addAll(widget.existingOrder?.problems ?? []);
     }
   }
 
@@ -70,37 +74,50 @@ class _OrderDetailsState extends State<OrderDetails> {
     });
   }
 
-  Future<void> _onSave() async {
-    final provider = Provider.of<OrderDetailsProvider>(context, listen: false);
+  void _onSave() async {
+    if (_deviceModelController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Device model cannot be empty.")),
+      );
+      return;
+    }
+
+    if (_problems.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please add at least one problem.")),
+      );
+      return;
+    }
+
+    // Create or update the order object
+    final order = OrderDetailsModel(
+      id: widget.existingOrder?.id ??
+          const Uuid().v4(), // Use existing ID if updating
+      deviceModel: _deviceModelController.text,
+      orderStatus:
+          OrderStatus.values[_orderStatusOptions.indexOf(_selectedOrderStatus)],
+      problems: _problems,
+    );
 
     try {
-      if (widget.orderId == null) {
-        // Create a new order
-        final order = OrderDetailsModel(
-          id: uuid.v4(),
-          deviceModel: _deviceModelController.text,
-          orderStatus: OrderStatus.values[_orderStatusOptions.indexOf(_selectedOrderStatus)],
-          problems: _problems,
-        );
+      final provider =
+          Provider.of<OrderDetailsProvider>(context, listen: false);
+
+      if (widget.existingOrder == null) {
         await provider.addOrder(order);
       } else {
-        // Update an existing order
-        final order = OrderDetailsModel(
-          id: widget.orderId!,
-          deviceModel: _deviceModelController.text,
-          orderStatus: OrderStatus.values[_orderStatusOptions.indexOf(_selectedOrderStatus)],
-          problems: _problems,
-        );
         await provider.updateOrder(order);
       }
 
+      widget.onOrderAdded(order);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(widget.orderId == null ? "Order added successfully!" : "Order updated successfully!"),
+          content: Text(widget.existingOrder == null
+              ? "Order added successfully!"
+              : "Order updated successfully!"),
         ),
       );
-
-      Navigator.of(context).pop(); // Close the form
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error saving order: $e")),
@@ -149,7 +166,9 @@ class _OrderDetailsState extends State<OrderDetails> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedOrderStatus,
+                value: _orderStatusOptions.contains(_selectedOrderStatus)
+                    ? _selectedOrderStatus
+                    : null,
                 items: _orderStatusOptions.map((status) {
                   return DropdownMenuItem(
                     value: status,
@@ -158,10 +177,12 @@ class _OrderDetailsState extends State<OrderDetails> {
                 }).toList(),
                 onChanged: (newValue) {
                   setState(() {
-                    _selectedOrderStatus = newValue!;
+                    _selectedOrderStatus =
+                        newValue ?? 'Pending'; // Default to 'Pending' if null
                   });
                 },
                 decoration: InputDecoration(
+                  labelText: "Select Order Status",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -238,7 +259,9 @@ class _OrderDetailsState extends State<OrderDetails> {
                 child: Container(
                   padding: const EdgeInsets.all(5),
                   child: Text(
-                    widget.orderId == null ? "Save Order" : "Update Order",
+                    widget.existingOrder == null
+                        ? "Save Order"
+                        : "Update Order",
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,

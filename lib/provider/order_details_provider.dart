@@ -30,7 +30,7 @@ class OrderDetailsProvider extends ChangeNotifier {
 
       _orders.clear();
       for (var doc in response.documents) {
-        _orders.add(OrderDetailsModel.fromMap(doc.data));
+        _orders.add(OrderDetailsModel.fromMap(doc.data, documentId: doc.$id));
       }
       notifyListeners();
     } catch (e) {
@@ -50,7 +50,7 @@ class OrderDetailsProvider extends ChangeNotifier {
       );
 
       // Create the order model using the generated ID
-      _orders.add(OrderDetailsModel.fromMap(response.data,documentId: response.$id));
+      _orders.add(OrderDetailsModel.fromMap(response.data, documentId: response.$id));
       notifyListeners();
     } catch (e) {
       debugPrint('Error adding order: $e');
@@ -61,11 +61,11 @@ class OrderDetailsProvider extends ChangeNotifier {
   Future<void> updateOrder(OrderDetailsModel order) async {
     try {
       final databases = Databases(_appwriteService.client);
-      if (order.id != null) {
+      if (order.id.isNotEmpty) {
         await databases.updateDocument(
           databaseId: databaseId,
           collectionId: collectionId,
-          documentId: order.id!, // 'id' can be null, so ensure it's checked
+          documentId: order.id, // 'id' is required and non-nullable
           data: order.toMap(),
         );
 
@@ -86,11 +86,11 @@ class OrderDetailsProvider extends ChangeNotifier {
   Future<void> removeOrder(OrderDetailsModel order) async {
     try {
       final databases = Databases(_appwriteService.client);
-      if (order.id != null) {
+      if (order.id.isNotEmpty) {
         await databases.deleteDocument(
           databaseId: databaseId,
           collectionId: collectionId,
-          documentId: order.id!, // 'id' can be null, so ensure it's checked
+          documentId: order.id, // 'id' is required and non-nullable
         );
 
         _orders.remove(order);
@@ -134,6 +134,7 @@ class OrderDetailsProvider extends ChangeNotifier {
 
       return OrderDetailsModel.fromMap(
         response.toMap(), // Pass only the data part for the model creation
+        documentId: response.$id, // Ensure the document ID is passed
       );
     } catch (e) {
       debugPrint('Error fetching order detail by ID: $e');

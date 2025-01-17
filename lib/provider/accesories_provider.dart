@@ -108,34 +108,29 @@ class AccessoriesProvider with ChangeNotifier {
   }
 
   // Update Accessories Data
-  Future<void> updateAccessories(String documentId, AccessoriesModel model) async {
-    _isLoading = true;
-    notifyListeners();
+Future<void> updateAccessories(AccessoriesModel accessory) async {
+  try {
+    final databases = Databases(_appwriteService.client);
+    await databases.updateDocument(
+      databaseId: _databaseId,
+      collectionId: _collectionId,
+      documentId: accessory.id!, // Ensure accessory has an ID
+      data: accessory.toMap(),
+    );
 
-    try {
-      final response = await _databases.updateDocument(
-        databaseId: _databaseId,
-        collectionId: _collectionId,
-        documentId: documentId,
-        data: model.toMap(),
-      );
-
-      final updatedAccessory =
-          AccessoriesModel.fromMap(response.data, id: response.$id);
-      final index = _accessories.indexWhere((accessory) => accessory.id == documentId);
-
-      if (index != -1) {
-        _accessories[index] = updatedAccessory; // Use updated data from the response
-        notifyListeners();
-      }
-    } catch (e) {
-      debugPrint('Error updating accessories: $e');
-      throw Exception('Failed to update accessories data.');
-    } finally {
-      _isLoading = false;
+    // Find the index of the accessory in the local list
+    final index = _accessories.indexWhere((a) => a.id == accessory.id);
+    if (index != -1) {
+      _accessories[index] = accessory; // Update the accessory in the local list
       notifyListeners();
     }
+
+    debugPrint('Accessory updated: ${accessory.id}');
+  } catch (e) {
+    debugPrint('Error updating accessory: ${e.toString()}');
   }
+}
+
 
   // Delete Accessories Data by ID
   Future<void> deleteAccessories(String documentId) async {

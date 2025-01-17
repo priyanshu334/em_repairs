@@ -1,13 +1,12 @@
 import 'package:em_repairs/provider/customer_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:em_repairs/services/apwrite_service.dart';
-
-import 'package:em_repairs/components/other_components/customer_componets/customer_display_card.dart';
+import 'package:em_repairs/components/edit_components/customer_display_card.dart';
 import 'package:em_repairs/components/other_components/customer_componets/customer_form.dart';
 import 'package:em_repairs/components/other_components/customer_componets/customer_list.dart';
 import 'package:em_repairs/models/customer_model.dart';
 import 'package:uuid/uuid.dart';
+import 'package:em_repairs/provider/order_provider.dart';
 
 class CustomerDetails extends StatefulWidget {
   final Function(CustomerModel?) onCustomerSelected;
@@ -22,7 +21,7 @@ class CustomerDetails extends StatefulWidget {
 }
 
 class _CustomerDetailsState extends State<CustomerDetails> {
-  final _formKey = GlobalKey<FormState>(); // Key for the form
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController searchController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
@@ -43,7 +42,20 @@ class _CustomerDetailsState extends State<CustomerDetails> {
     await provider.fetchCustomers();
     setState(() {
       _customers = provider.customers;
+      if (_customers.isNotEmpty) {
+        _selectedCustomer = _customers.first;  // Set the first customer as selected initially
+      }
     });
+
+    if (_selectedCustomer != null) {
+      _loadOrdersForSelectedCustomer(_selectedCustomer!); // Fetch orders for the selected customer
+    }
+  }
+
+  // Load orders for the selected customer
+  void _loadOrdersForSelectedCustomer(CustomerModel customer) async {
+    final orderProvider = Provider.of<OrderProvider>(context, listen: false);
+    await orderProvider.listOrdersByCustomer(customer.name); // Fetch orders by customer name
   }
 
   // Show dialog to add a customer
@@ -71,7 +83,7 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                 if (_formKey.currentState?.validate() ?? false) {
                   final provider = Provider.of<CustomerProvider>(context, listen: false);
                   final customer = CustomerModel(
-                           id: const Uuid().v4(),
+                    id: const Uuid().v4(),
                     name: nameController.text,
                     phone: phoneController.text,
                     address: addressController.text,
@@ -115,6 +127,9 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                 });
                 Navigator.pop(context);
                 widget.onCustomerSelected(_selectedCustomer); // Send selected customer to parent
+                if (_selectedCustomer != null) {
+                  _loadOrdersForSelectedCustomer(_selectedCustomer!); // Fetch orders
+                }
               },
             ),
           ),
@@ -124,6 +139,61 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                 Navigator.pop(context);
               },
               child: const Text("Close"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Show dialog to update customer
+  void _showUpdateCustomerDialog(CustomerModel customer) {
+    nameController.text = customer.name;
+    phoneController.text = customer.phone;
+    addressController.text = customer.address;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Update Customer Details"),
+          content: CustomerForm(
+            nameController: nameController,
+            phoneController: phoneController,
+            addressController: addressController,
+            formKey: _formKey,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text("Close"),
+            ),
+            TextButton(
+              onPressed: () {
+                if (_formKey.currentState?.validate() ?? false) {
+                  final provider = Provider.of<CustomerProvider>(context, listen: false);
+                  final updatedCustomer = CustomerModel(
+                    id: customer.id, // Ensure ID is passed
+                    name: nameController.text,
+                    phone: phoneController.text,
+                    address: addressController.text,
+                  );
+
+                  provider.updateCustomer(updatedCustomer);
+
+                  nameController.clear();
+                  phoneController.clear();
+                  addressController.clear();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Customer Updated')),
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text("Update"),
             ),
           ],
         );
@@ -143,7 +213,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Title
               const Text(
                 "Customer Details",
                 style: TextStyle(
@@ -154,19 +223,22 @@ class _CustomerDetailsState extends State<CustomerDetails> {
               ),
               const SizedBox(height: 16),
 
-              // Display Customer Selection Card
               CustomerDisplayCard(
                 selectedCustomer: _selectedCustomer,
                 onClearSelection: () {
                   setState(() {
                     _selectedCustomer = null;
                   });
-                  widget.onCustomerSelected(null); // Notify parent that selection was cleared
+                  widget.onCustomerSelected(null);
+                },
+                onEdit: () {
+                  if (_selectedCustomer != null) {
+                    _showUpdateCustomerDialog(_selectedCustomer!); // Open update dialog
+                  }
                 },
               ),
               const SizedBox(height: 16),
 
-              // Customer Selection & Add Buttons
               Row(
                 children: [
                   Expanded(
@@ -187,7 +259,6 @@ class _CustomerDetailsState extends State<CustomerDetails> {
                         ),
                       ),
                       onChanged: (value) {
-                        // Update search results dynamically
                         final provider = Provider.of<CustomerProvider>(context, listen: false);
                         setState(() {
                           _customers = provider.customers

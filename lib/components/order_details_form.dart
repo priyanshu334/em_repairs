@@ -2,6 +2,7 @@ import 'package:em_repairs/models/order_details_models.dart';
 import 'package:em_repairs/provider/order_details_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 class OrderDetailsForm extends StatefulWidget {
   final Function(OrderDetailsModel order) onOrderAdded; // Callback for the entire order object
@@ -46,6 +47,7 @@ class _OrderDetailsFormState extends State<OrderDetailsForm> {
   void _onSave() async {
     // Create the new order object without specifying the ID
     final order = OrderDetailsModel(
+       id: const Uuid().v4(),
       deviceModel: _deviceModelController.text,
       orderStatus: OrderStatus.values[_orderStatusOptions.indexOf(_selectedOrderStatus)],
       problems: _problems,

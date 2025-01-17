@@ -30,7 +30,8 @@ class CustomerProvider extends ChangeNotifier {
 
       _customers.clear();
       for (var doc in response.documents ?? []) {
-        _customers.add(CustomerModel.fromMap(doc.data)); // Removed documentId
+        // Pass documentId explicitly to CustomerModel
+        _customers.add(CustomerModel.fromMap(doc.data, documentId: doc.$id));
       }
       notifyListeners();
       debugPrint('Fetched ${_customers.length} customers successfully.');
@@ -50,8 +51,8 @@ class CustomerProvider extends ChangeNotifier {
         data: customer.toMap(),
       );
 
-      // Fetch the document and update the list
-      final addedCustomer = CustomerModel.fromMap(response.data,documentId: response.$id); // Removed documentId
+      // Pass the generated document ID to CustomerModel
+      final addedCustomer = CustomerModel.fromMap(response.data, documentId: response.$id);
       _customers.add(addedCustomer);
       notifyListeners();
       debugPrint('Customer added: ${customer.name}');
@@ -67,7 +68,7 @@ class CustomerProvider extends ChangeNotifier {
       await databases.updateDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: customer.id!, // You can keep this if required but ensure customer has an ID
+        documentId: customer.id, // Ensure the customer has an ID
         data: customer.toMap(),
       );
 
@@ -89,7 +90,7 @@ class CustomerProvider extends ChangeNotifier {
       await databases.deleteDocument(
         databaseId: databaseId,
         collectionId: collectionId,
-        documentId: customer.id!, // Ensure customer has an ID before deletion
+        documentId: customer.id, // Ensure customer has an ID before deletion
       );
 
       _customers.removeWhere((c) => c.id == customer.id);
@@ -130,7 +131,8 @@ class CustomerProvider extends ChangeNotifier {
         documentId: id,
       );
 
-      return CustomerModel.fromMap(response.data); // Removed documentId
+      // Pass documentId explicitly to CustomerModel
+      return CustomerModel.fromMap(response.data, documentId: response.$id);
     } catch (e) {
       debugPrint('Error fetching customer by ID: ${e.toString()}');
       return null;
